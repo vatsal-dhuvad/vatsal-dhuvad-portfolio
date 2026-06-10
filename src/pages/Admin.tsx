@@ -174,7 +174,13 @@ export default function Admin() {
         {/* SKILLS */}
         {panel === "skills" && (
           <>
-            <div className="a-head"><h1>📊 Skills</h1><button className="btn-add" onClick={() => setModal({ type: "skill" })}>+ Add Skill</button></div>
+            <div className="a-head">
+              <h1>📊 Skills</h1>
+              <div style={{display:'flex',gap:10}}>
+                <button className="btn-add" onClick={async () => { try { await setData("skills", data.skills); showToast("All skills saved!", "success"); } catch(e:any){ showToast(e.message||"Error", "error"); } }}>💾 Save Changes</button>
+                <button className="btn-add" onClick={() => setModal({ type: "skill" })}>+ Add Skill</button>
+              </div>
+            </div>
             <div className="a-card" style={{ overflowX: "auto" }}>
               <table className="a-table">
                 <thead><tr><th>Skill</th><th>Level</th><th>Category</th><th>Actions</th></tr></thead>
@@ -202,7 +208,13 @@ export default function Admin() {
         {/* PROJECTS */}
         {panel === "projects" && (
           <>
-            <div className="a-head"><h1>📁 Projects</h1><button className="btn-add" onClick={() => setModal({ type: "project" })}>+ Add Project</button></div>
+            <div className="a-head">
+              <h1>📁 Projects</h1>
+              <div style={{display:'flex',gap:10}}>
+                <button className="btn-add" onClick={async () => { try { await setData("projects", data.projects); showToast("All projects saved!", "success"); } catch(e:any){ showToast(e.message||"Error", "error"); } }}>💾 Save Changes</button>
+                <button className="btn-add" onClick={() => setModal({ type: "project" })}>+ Add Project</button>
+              </div>
+            </div>
             <div className="a-grid">
               {data.projects.map((p) => (
                 <div key={p.id} className="a-card a-item">
@@ -223,7 +235,13 @@ export default function Admin() {
         {/* CERTIFICATES */}
         {panel === "certificates" && (
           <>
-            <div className="a-head"><h1>🏅 Certificates</h1><button className="btn-add" onClick={() => setModal({ type: "certificate" })}>+ Add Certificate</button></div>
+            <div className="a-head">
+              <h1>🏅 Certificates</h1>
+              <div style={{display:'flex',gap:10}}>
+                <button className="btn-add" onClick={async () => { try { await setData("certificates", data.certificates); showToast("All certificates saved!", "success"); } catch(e:any){ showToast(e.message||"Error", "error"); } }}>💾 Save Changes</button>
+                <button className="btn-add" onClick={() => setModal({ type: "certificate" })}>+ Add Certificate</button>
+              </div>
+            </div>
             <div className="a-grid">
               {data.certificates.map((c) => (
                 <div key={c.id} className="a-card a-item">
@@ -243,7 +261,13 @@ export default function Admin() {
         {/* EDUCATION */}
         {panel === "education" && (
           <>
-            <div className="a-head"><h1>🎓 Education</h1><button className="btn-add" onClick={() => setModal({ type: "education" })}>+ Add Education</button></div>
+            <div className="a-head">
+              <h1>🎓 Education</h1>
+              <div style={{display:'flex',gap:10}}>
+                <button className="btn-add" onClick={async () => { try { await setData("education", data.education); showToast("All education saved!", "success"); } catch(e:any){ showToast(e.message||"Error", "error"); } }}>💾 Save Changes</button>
+                <button className="btn-add" onClick={() => setModal({ type: "education" })}>+ Add Education</button>
+              </div>
+            </div>
             <div className="a-grid">
               {data.education.map((e) => (
                 <div key={e.id} className="a-card a-item">
@@ -264,7 +288,13 @@ export default function Admin() {
         {/* EXPERIENCE */}
         {panel === "experience" && (
           <>
-            <div className="a-head"><h1>💼 Experience</h1><button className="btn-add" onClick={() => setModal({ type: "experience" })}>+ Add Experience</button></div>
+            <div className="a-head">
+              <h1>💼 Experience</h1>
+              <div style={{display:'flex',gap:10}}>
+                <button className="btn-add" onClick={async () => { try { await setData("experience", data.experience); showToast("All experience saved!", "success"); } catch(e:any){ showToast(e.message||"Error", "error"); } }}>💾 Save Changes</button>
+                <button className="btn-add" onClick={() => setModal({ type: "experience" })}>+ Add Experience</button>
+              </div>
+            </div>
             <div className="a-grid">
               {data.experience.map((e) => (
                 <div key={e.id} className="a-card a-item">
