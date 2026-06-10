@@ -146,12 +146,20 @@ export const DEFAULT_PASSWORD = "Vatsal2253@";
 
 export async function getAllData(): Promise<PortfolioData> {
   try {
-    const snapshot = await getDoc(DOC_REF);
-    if (snapshot.exists()) {
-      return snapshot.data() as PortfolioData;
-    }
-    await setDoc(DOC_REF, DEFAULT_DATA);
-    return JSON.parse(JSON.stringify(DEFAULT_DATA));
+    const fetchPromise = async () => {
+      const snapshot = await getDoc(DOC_REF);
+      if (snapshot.exists()) {
+        return snapshot.data() as PortfolioData;
+      }
+      await setDoc(DOC_REF, DEFAULT_DATA);
+      return JSON.parse(JSON.stringify(DEFAULT_DATA));
+    };
+
+    const timeoutPromise = new Promise<never>((_, reject) => 
+      setTimeout(() => reject(new Error("Firebase connection timed out")), 4000)
+    );
+
+    return await Promise.race([fetchPromise(), timeoutPromise]);
   } catch (err) {
     console.error("Firebase error, returning default data:", err);
     return JSON.parse(JSON.stringify(DEFAULT_DATA));
