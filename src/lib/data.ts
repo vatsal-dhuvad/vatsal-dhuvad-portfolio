@@ -167,7 +167,16 @@ export async function getAllData(): Promise<PortfolioData> {
 }
 
 export async function saveAllData(data: PortfolioData): Promise<void> {
-  await setDoc(DOC_REF, data);
+  try {
+    const savePromise = setDoc(DOC_REF, data);
+    const timeoutPromise = new Promise<never>((_, reject) => 
+      setTimeout(() => reject(new Error("Firebase connection timed out")), 4000)
+    );
+    await Promise.race([savePromise, timeoutPromise]);
+  } catch (err) {
+    console.error("Firebase error saving data:", err);
+    throw new Error("Failed to save data. Firewall might be blocking the connection.");
+  }
 }
 
 export async function getData<K extends keyof PortfolioData>(section: K): Promise<PortfolioData[K]> {
@@ -236,12 +245,25 @@ export async function resetToDefaults(): Promise<void> {
 }
 
 export async function getAdminPassword(): Promise<string> {
-  const snapshot = await getDoc(ADMIN_REF);
-  if (snapshot.exists() && snapshot.data().password) {
-    return snapshot.data().password;
+  try {
+    const fetchPromise = async () => {
+      const snapshot = await getDoc(ADMIN_REF);
+      if (snapshot.exists() && snapshot.data().password) {
+        return snapshot.data().password;
+      }
+      await setDoc(ADMIN_REF, { password: DEFAULT_PASSWORD });
+      return DEFAULT_PASSWORD;
+    };
+    
+    const timeoutPromise = new Promise<never>((_, reject) => 
+      setTimeout(() => reject(new Error("Firebase connection timed out")), 4000)
+    );
+    
+    return await Promise.race([fetchPromise(), timeoutPromise]);
+  } catch (err) {
+    console.error("Firebase error getting password:", err);
+    return DEFAULT_PASSWORD;
   }
-  await setDoc(ADMIN_REF, { password: DEFAULT_PASSWORD });
-  return DEFAULT_PASSWORD;
 }
 
 export async function setAdminPassword(newPassword: string): Promise<void> {
