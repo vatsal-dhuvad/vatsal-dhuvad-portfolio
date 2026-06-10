@@ -3,11 +3,7 @@
 @tailwind utilities;
 
 /* ─── CUSTOM CURSOR ───────────────── */
-*,
-*::before,
-*::after {
-  cursor: none !important;
-}
+/* Removed cursor: none to allow default mouse pointer */
 
 /* ─── HERO GRID ───────────────────── */
 .hero-grid-bg {
