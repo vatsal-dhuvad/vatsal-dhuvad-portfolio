@@ -23,8 +23,15 @@ export function ToastContainer() {
   return (
     <div className="toast-wrap">
       {toasts.map((t) => (
-        <div key={t.id} className={`toast show ${t.type}`}>{t.message}</div>
+        <div key={t.id} className={`toast show ${t.type}`} style={{ animation: "slideOut 0.4s ease forwards 2.8s" }}>
+          {t.message}
+        </div>
       ))}
+      <style>{`
+        @keyframes slideOut {
+          to { transform: translateY(150%); opacity: 0; }
+        }
+      `}</style>
     </div>
   );
 }
