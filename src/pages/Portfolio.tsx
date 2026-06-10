@@ -152,7 +152,13 @@ export default function Portfolio() {
     (e.target as HTMLFormElement).reset();
   };
 
-  if (!data) return null;
+  if (!data) return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", background: "var(--bg-0)", color: "var(--text-0)", flexDirection: "column", gap: 16 }}>
+      <div style={{ width: 40, height: 40, border: "4px solid var(--text-3)", borderTopColor: "var(--primary)", borderRadius: "50%", animation: "spin 1s linear infinite" }} />
+      <h2 style={{ fontFamily: "monospace" }}>Loading Portfolio Data...</h2>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
   const { profile, skills, projects, certificates, education, experience, socialLinks } = data;
 
   const skillCats = ["All", ...Array.from(new Set(skills.map(s => s.category)))];
