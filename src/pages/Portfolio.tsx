@@ -70,7 +70,9 @@ export default function Portfolio() {
   const [certSearch,  setCertSearch]  = useState("");
   const [formOk,      setFormOk]      = useState(false);
 
-  useEffect(() => { setData(getAllData()); }, []);
+  useEffect(() => {
+    getAllData().then(fetched => setData(fetched));
+  }, []);
 
   // scroll + active section
   useEffect(() => {

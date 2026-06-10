@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import {
   getAllData, setData, addItem, updateItem, deleteItem,
   exportData, importData, resetToDefaults, verifyPassword, setAdminPassword,
+  DEFAULT_DATA
 } from "../lib/data";
 import type {
   PortfolioData, Skill, Project, Certificate, Education, Experience,
@@ -22,22 +23,27 @@ export default function Admin() {
   const [pw, setPw] = useState("");
   const [loginErr, setLoginErr] = useState(false);
   const [panel, setPanel] = useState<Panel>("profile");
-  const [data, setLocalData] = useState<PortfolioData>(getAllData());
+  const [data, setLocalData] = useState<PortfolioData | null>(null);
   const [modal, setModal] = useState<ModalMode>(null);
   const importRef = useRef<HTMLInputElement>(null);
 
-  const refresh = () => setLocalData(getAllData());
+  const refresh = async () => {
+    const fetched = await getAllData();
+    setLocalData(fetched);
+  };
 
-  const login = () => {
-    if (verifyPassword(pw)) { setAuthed(true); setLoginErr(false); }
+  useEffect(() => { refresh(); }, []);
+
+  const login = async () => {
+    if (await verifyPassword(pw)) { setAuthed(true); setLoginErr(false); }
     else setLoginErr(true);
   };
 
   // Profile
-  const [pf, setPf] = useState(data.profile);
-  useEffect(() => { setPf(data.profile); }, [data.profile]);
+  const [pf, setPf] = useState(DEFAULT_DATA.profile);
+  useEffect(() => { if (data) setPf(data.profile); }, [data]);
 
-  const saveProfile = () => { setData("profile", pf); refresh(); showToast("Profile saved!", "success"); };
+  const saveProfile = async () => { await setData("profile", pf); await refresh(); showToast("Profile saved!", "success"); };
 
   const handlePhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]; if (!f) return;
@@ -49,30 +55,30 @@ export default function Admin() {
   };
 
   // Social
-  const [sl, setSl] = useState(data.socialLinks);
-  useEffect(() => { setSl(data.socialLinks); }, [data.socialLinks]);
-  const saveSocial = () => { setData("socialLinks", sl); refresh(); showToast("Social links saved!", "success"); };
+  const [sl, setSl] = useState(DEFAULT_DATA.socialLinks);
+  useEffect(() => { if (data) setSl(data.socialLinks); }, [data]);
+  const saveSocial = async () => { await setData("socialLinks", sl); await refresh(); showToast("Social links saved!", "success"); };
 
   // Password
   const [pwCur, setPwCur] = useState(""); const [pwNew, setPwNew] = useState(""); const [pwCon, setPwCon] = useState("");
-  const changePassword = () => {
-    if (!verifyPassword(pwCur)) { showToast("Current password incorrect", "error"); return; }
+  const changePassword = async () => {
+    if (!(await verifyPassword(pwCur))) { showToast("Current password incorrect", "error"); return; }
     if (pwNew !== pwCon) { showToast("Passwords don't match", "error"); return; }
     if (pwNew.length < 4) { showToast("Too short (min 4 chars)", "error"); return; }
-    setAdminPassword(pwNew); setPwCur(""); setPwNew(""); setPwCon(""); showToast("Password updated!", "success");
+    await setAdminPassword(pwNew); setPwCur(""); setPwNew(""); setPwCon(""); showToast("Password updated!", "success");
   };
 
   // Import
   const handleImport = () => {
     const file = importRef.current?.files?.[0]; if (!file) { showToast("Select a file first", "error"); return; }
-    const r = new FileReader(); r.onload = () => {
-      if (importData(r.result as string)) { refresh(); showToast("Data imported!", "success"); }
+    const r = new FileReader(); r.onload = async () => {
+      if (await importData(r.result as string)) { await refresh(); showToast("Data imported!", "success"); }
       else showToast("Import failed — invalid file", "error");
     }; r.readAsText(file);
   };
 
-  const handleReset = () => {
-    if (confirm("Reset ALL data to defaults? This cannot be undone.")) { resetToDefaults(); refresh(); showToast("Reset to defaults!", "info"); }
+  const handleReset = async () => {
+    if (confirm("Reset ALL data to defaults? This cannot be undone.")) { await resetToDefaults(); await refresh(); showToast("Reset to defaults!", "info"); }
   };
 
   if (!authed) return (
@@ -102,6 +108,8 @@ export default function Admin() {
     { key: "data", icon: "🗄️", label: "Data Management" },
     { key: "password", icon: "🔒", label: "Change Password" },
   ];
+
+  if (!data) return <div style={{color:"white", padding: 40}}>Loading data from database...</div>;
 
   return (
     <div className="admin-bg admin-layout">
@@ -172,7 +180,7 @@ export default function Admin() {
                       <td><span className="cat-badge">{s.category}</span></td>
                       <td style={{ display: "flex", gap: 8, alignItems: "center" }}>
                         <button className="btn-edit" onClick={() => setModal({ type: "skill", item: s })}>Edit</button>
-                        <button className="btn-del" onClick={() => { deleteItem("skills", s.id); refresh(); showToast("Deleted", "info"); }}>Delete</button>
+                        <button className="btn-del" onClick={async () => { await deleteItem("skills", s.id); await refresh(); showToast("Deleted", "info"); }}>Delete</button>
                       </td>
                     </tr>
                   ))}
@@ -195,7 +203,7 @@ export default function Admin() {
                   <div className="tags">{p.technologies.slice(0, 4).map((t) => <span key={t} className="tag">{t}</span>)}</div>
                   <div className="a-item-footer">
                     <button className="btn-edit" onClick={() => setModal({ type: "project", item: p })}>Edit</button>
-                    <button className="btn-del" onClick={() => { deleteItem("projects", p.id); refresh(); showToast("Deleted", "info"); }}>Delete</button>
+                    <button className="btn-del" onClick={async () => { await deleteItem("projects", p.id); await refresh(); showToast("Deleted", "info"); }}>Delete</button>
                   </div>
                 </div>
               ))}
@@ -215,7 +223,7 @@ export default function Admin() {
                   <p style={{ color: "var(--text-3)", fontSize: ".78rem", marginBottom: 16 }}>{c.date}</p>
                   <div className="a-item-footer">
                     <button className="btn-edit" onClick={() => setModal({ type: "certificate", item: c })}>Edit</button>
-                    <button className="btn-del" onClick={() => { deleteItem("certificates", c.id); refresh(); showToast("Deleted", "info"); }}>Delete</button>
+                    <button className="btn-del" onClick={async () => { await deleteItem("certificates", c.id); await refresh(); showToast("Deleted", "info"); }}>Delete</button>
                   </div>
                 </div>
               ))}
@@ -236,7 +244,7 @@ export default function Admin() {
                   {e.grade && <p style={{ color: "var(--green)", fontSize: ".83rem", fontWeight: 700, marginBottom: 14 }}>Grade: {e.grade}</p>}
                   <div className="a-item-footer">
                     <button className="btn-edit" onClick={() => setModal({ type: "education", item: e })}>Edit</button>
-                    <button className="btn-del" onClick={() => { deleteItem("education", e.id); refresh(); showToast("Deleted", "info"); }}>Delete</button>
+                    <button className="btn-del" onClick={async () => { await deleteItem("education", e.id); await refresh(); showToast("Deleted", "info"); }}>Delete</button>
                   </div>
                 </div>
               ))}
@@ -257,7 +265,7 @@ export default function Admin() {
                   <div className="tags">{e.technologies.slice(0, 4).map((t) => <span key={t} className="tag">{t}</span>)}</div>
                   <div className="a-item-footer">
                     <button className="btn-edit" onClick={() => setModal({ type: "experience", item: e })}>Edit</button>
-                    <button className="btn-del" onClick={() => { deleteItem("experience", e.id); refresh(); showToast("Deleted", "info"); }}>Delete</button>
+                    <button className="btn-del" onClick={async () => { await deleteItem("experience", e.id); await refresh(); showToast("Deleted", "info"); }}>Delete</button>
                   </div>
                 </div>
               ))}
@@ -291,7 +299,7 @@ export default function Admin() {
               <div className="dc">
                 <h3>📥 Export Backup</h3>
                 <p>Download all portfolio data as a JSON file. Good for backups before major changes.</p>
-                <button className="btn-add" onClick={() => { exportData(); showToast("Exported!", "success"); }}>Export JSON</button>
+                <button className="btn-add" onClick={async () => { await exportData(); showToast("Exported!", "success"); }}>Export JSON</button>
               </div>
               <div className="dc">
                 <h3>📤 Import Data</h3>
@@ -332,9 +340,9 @@ export default function Admin() {
 
 // ── Modals ──────────────────────────────────────────────────────────────────
 function ModalWrap({ modal, onClose, onSave }: { modal: NonNullable<ModalMode>; onClose: () => void; onSave: () => void }) {
-  const save = (section: keyof PortfolioData, item: Record<string, unknown>) => {
-    if ((item as { id?: string }).id) updateItem(section, (item as { id: string }).id, item as never);
-    else addItem(section, item as never);
+  const save = async (section: keyof PortfolioData, item: Record<string, unknown>) => {
+    if ((item as { id?: string }).id) await updateItem(section, (item as { id: string }).id, item as never);
+    else await addItem(section, item as never);
     onSave(); showToast("Saved!", "success");
   };
   return (
@@ -436,4 +444,3 @@ function ExpForm({ item, onSave }: { item?: Experience; onSave: (v: Partial<Expe
     </>
   );
 }
-

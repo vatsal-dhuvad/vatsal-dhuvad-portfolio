@@ -1,4 +1,6 @@
 import type { PortfolioData } from "./types";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { db } from "./firebase";
 
 export const DEFAULT_DATA: PortfolioData = {
   profile: {
@@ -137,67 +139,65 @@ export const DEFAULT_DATA: PortfolioData = {
   },
 };
 
-const STORAGE_KEY = "portfolio_data";
-const ADMIN_KEY = "portfolio_admin";
+const DOC_REF = doc(db, "portfolio", "data");
+const ADMIN_REF = doc(db, "portfolio", "admin");
+
 export const DEFAULT_PASSWORD = "Vatsal2253@";
 
-export function getAllData(): PortfolioData {
-  const stored = localStorage.getItem(STORAGE_KEY);
-  if (stored) {
-    try {
-      return JSON.parse(stored);
-    } catch {
-      // corrupt, reset
-    }
+export async function getAllData(): Promise<PortfolioData> {
+  const snapshot = await getDoc(DOC_REF);
+  if (snapshot.exists()) {
+    return snapshot.data() as PortfolioData;
   }
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_DATA));
+  await setDoc(DOC_REF, DEFAULT_DATA);
   return JSON.parse(JSON.stringify(DEFAULT_DATA));
 }
 
-export function saveAllData(data: PortfolioData): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+export async function saveAllData(data: PortfolioData): Promise<void> {
+  await setDoc(DOC_REF, data);
 }
 
-export function getData<K extends keyof PortfolioData>(section: K): PortfolioData[K] {
-  return getAllData()[section];
+export async function getData<K extends keyof PortfolioData>(section: K): Promise<PortfolioData[K]> {
+  const all = await getAllData();
+  return all[section];
 }
 
-export function setData<K extends keyof PortfolioData>(section: K, value: PortfolioData[K]): void {
-  const all = getAllData();
+export async function setData<K extends keyof PortfolioData>(section: K, value: PortfolioData[K]): Promise<void> {
+  const all = await getAllData();
   all[section] = value;
-  saveAllData(all);
+  await saveAllData(all);
 }
 
 function generateId(): string {
   return "id_" + Date.now() + "_" + Math.random().toString(36).substr(2, 6);
 }
 
-export function addItem<T extends { id: string }>(section: keyof PortfolioData, item: Omit<T, "id">): T {
-  const all = getAllData();
+export async function addItem<T extends { id: string }>(section: keyof PortfolioData, item: Omit<T, "id">): Promise<T> {
+  const all = await getAllData();
   const newItem = { ...item, id: generateId() } as T;
   (all[section] as T[]).push(newItem);
-  saveAllData(all);
+  await saveAllData(all);
   return newItem;
 }
 
-export function updateItem<T extends { id: string }>(section: keyof PortfolioData, id: string, updatedItem: Omit<T, "id">): void {
-  const all = getAllData();
+export async function updateItem<T extends { id: string }>(section: keyof PortfolioData, id: string, updatedItem: Omit<T, "id">): Promise<void> {
+  const all = await getAllData();
   const arr = all[section] as T[];
   const index = arr.findIndex((i) => i.id === id);
   if (index !== -1) {
     arr[index] = { ...updatedItem, id } as T;
-    saveAllData(all);
+    await saveAllData(all);
   }
 }
 
-export function deleteItem(section: keyof PortfolioData, id: string): void {
-  const all = getAllData();
+export async function deleteItem(section: keyof PortfolioData, id: string): Promise<void> {
+  const all = await getAllData();
   (all[section] as { id: string }[]) = (all[section] as { id: string }[]).filter((i) => i.id !== id);
-  saveAllData(all);
+  await saveAllData(all);
 }
 
-export function exportData(): void {
-  const data = getAllData();
+export async function exportData(): Promise<void> {
+  const data = await getAllData();
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -207,34 +207,35 @@ export function exportData(): void {
   URL.revokeObjectURL(url);
 }
 
-export function importData(jsonString: string): boolean {
+export async function importData(jsonString: string): Promise<boolean> {
   try {
     const data = JSON.parse(jsonString);
     if (!data.profile || !data.skills || !data.projects) throw new Error("Invalid format");
-    saveAllData(data);
+    await saveAllData(data);
     return true;
   } catch {
     return false;
   }
 }
 
-export function resetToDefaults(): void {
-  saveAllData(JSON.parse(JSON.stringify(DEFAULT_DATA)));
+export async function resetToDefaults(): Promise<void> {
+  await saveAllData(JSON.parse(JSON.stringify(DEFAULT_DATA)));
 }
 
-export function getAdminPassword(): string {
-  const stored = localStorage.getItem(ADMIN_KEY);
-  if (!stored || stored === "vatsal2024") {
-    localStorage.setItem(ADMIN_KEY, DEFAULT_PASSWORD);
-    return DEFAULT_PASSWORD;
+export async function getAdminPassword(): Promise<string> {
+  const snapshot = await getDoc(ADMIN_REF);
+  if (snapshot.exists() && snapshot.data().password) {
+    return snapshot.data().password;
   }
-  return stored;
+  await setDoc(ADMIN_REF, { password: DEFAULT_PASSWORD });
+  return DEFAULT_PASSWORD;
 }
 
-export function setAdminPassword(newPassword: string): void {
-  localStorage.setItem(ADMIN_KEY, newPassword);
+export async function setAdminPassword(newPassword: string): Promise<void> {
+  await setDoc(ADMIN_REF, { password: newPassword });
 }
 
-export function verifyPassword(input: string): boolean {
-  return input === getAdminPassword();
+export async function verifyPassword(input: string): Promise<boolean> {
+  const correct = await getAdminPassword();
+  return input === correct;
 }
