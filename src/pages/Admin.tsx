@@ -46,7 +46,10 @@ export default function Admin() {
   const [pf, setPf] = useState(DEFAULT_DATA.profile);
   useEffect(() => { if (data) setPf(data.profile); }, [data]);
 
-  const saveProfile = async () => { await setData("profile", pf); await refresh(); showToast("Profile saved!", "success"); };
+  const saveProfile = async () => {
+    try { await setData("profile", pf); await refresh(); showToast("Profile saved!", "success"); }
+    catch (e: any) { showToast(e.message || "Failed to save", "error"); }
+  };
 
   const handlePhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]; if (!f) return;
@@ -60,7 +63,10 @@ export default function Admin() {
   // Social
   const [sl, setSl] = useState(DEFAULT_DATA.socialLinks);
   useEffect(() => { if (data) setSl(data.socialLinks); }, [data]);
-  const saveSocial = async () => { await setData("socialLinks", sl); await refresh(); showToast("Social links saved!", "success"); };
+  const saveSocial = async () => {
+    try { await setData("socialLinks", sl); await refresh(); showToast("Social links saved!", "success"); }
+    catch (e: any) { showToast(e.message || "Failed to save", "error"); }
+  };
 
   // Password
   const [pwCur, setPwCur] = useState(""); const [pwNew, setPwNew] = useState(""); const [pwCon, setPwCon] = useState("");
@@ -344,9 +350,13 @@ export default function Admin() {
 // ── Modals ──────────────────────────────────────────────────────────────────
 function ModalWrap({ modal, onClose, onSave }: { modal: NonNullable<ModalMode>; onClose: () => void; onSave: () => void }) {
   const save = async (section: keyof PortfolioData, item: Record<string, unknown>) => {
-    if ((item as { id?: string }).id) await updateItem(section, (item as { id: string }).id, item as never);
-    else await addItem(section, item as never);
-    onSave(); showToast("Saved!", "success");
+    try {
+      if ((item as { id?: string }).id) await updateItem(section, (item as { id: string }).id, item as never);
+      else await addItem(section, item as never);
+      onSave(); showToast("Saved!", "success");
+    } catch (e: any) {
+      showToast(e.message || "Failed to save", "error");
+    }
   };
   return (
     <div className="modal-bg open" onClick={(e) => e.target === e.currentTarget && onClose()}>
