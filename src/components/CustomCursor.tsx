@@ -70,6 +70,11 @@ export default function CustomCursor() {
         strokeLinejoin="round"
         fill="none"
       />
+      <style>{`
+        @media (pointer: coarse) {
+          svg { display: none !important; }
+        }
+      `}</style>
     </svg>
   );
 }
