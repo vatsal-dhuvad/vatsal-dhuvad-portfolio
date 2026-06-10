@@ -34,9 +34,12 @@ export default function Admin() {
 
   useEffect(() => { refresh(); }, []);
 
+  const [loggingIn, setLoggingIn] = useState(false);
   const login = async () => {
+    setLoggingIn(true);
     if (await verifyPassword(pw)) { setAuthed(true); setLoginErr(false); }
     else setLoginErr(true);
+    setLoggingIn(false);
   };
 
   // Profile
@@ -88,7 +91,7 @@ export default function Admin() {
         <div className="login-sub">Portfolio Admin</div>
         <input className="login-input" type="password" placeholder="Enter admin password" value={pw}
           onChange={(e) => setPw(e.target.value)} onKeyDown={(e) => e.key === "Enter" && login()} autoFocus />
-        <button className="login-btn" onClick={login}>Sign In</button>
+        <button className="login-btn" onClick={login} disabled={loggingIn}>{loggingIn ? "Connecting..." : "Sign In"}</button>
         {loginErr && <p className="login-err">Incorrect password. Try again.</p>}
         <p className="login-hint">Enter your admin password to continue.</p>
       </div>
