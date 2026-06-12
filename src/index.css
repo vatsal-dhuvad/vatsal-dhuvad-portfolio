@@ -319,6 +319,17 @@ select {
   display: block;
 }
 
+/* ─── CUSTOM CURSOR LAYOUT ────────────────── */
+html, body, a, button, input, select, textarea, [role="button"], * {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://w3.org' width='28' height='28' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 2L2 22l10-5 10 5L12 2z'/%3E%3C/svg%3E") 12 2, auto !important;
+}
+
+@media (prefers-color-scheme: light) {
+  html, body, a, button, * {
+    cursor: url("data:image/svg+xml,%3Csvg xmlns='http://w3.org' width='28' height='28' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 2L2 22l10-5 10 5L12 2z'/%3E%3C/svg%3E") 12 2, auto !important;
+  }
+}
+
 /* ─── HERO ────────────────────────── */
 .hero {
   min-height: 100vh;
@@ -328,14 +339,35 @@ select {
   position: relative;
   overflow: hidden;
   text-align: center;
-  background: #000000; /* Pure deep black background to match reference profile */
+  background-color: #000000; /* Deep black base */
+  
+  /* Creates a repeating grid pattern across the whole background */
+  background-image: 
+    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 40px 40px; /* Size of the grid squares */
+  background-position: center center;
+  
+  /* THIS IS THE TRICK: Fades the grid out so it is only visible in a center circle glow */
+  -webkit-mask-image: radial-gradient(circle at center, rgba(0, 0, 0, 1) 20%, rgba(0, 0, 0, 0) 70%);
+  mask-image: radial-gradient(circle at center, rgba(0, 0, 0, 1) 20%, rgba(0, 0, 0, 0) 70%);
+  
   padding: calc(var(--nav) + 48px) 0 100px;
+}
+
+/* Base backing panel to keep underlying content deep black */
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: #000000;
+  z-index: -2;
 }
 
 .hero-content {
   position: relative;
   z-index: 2;
-  max-width: 820px; /* Widened slightly to balance centralized font distribution */
+  max-width: 820px;
   width: 100%;
   margin: 0 auto;
   padding: 0 24px;
@@ -352,7 +384,7 @@ select {
   font-size: .78rem;
   font-weight: 600;
   color: #10b981;
-  margin-bottom: 32px; /* Adjusted spacing */
+  margin-bottom: 32px;
 }
 
 .hero-badge .dot {
@@ -375,15 +407,14 @@ select {
 }
 
 .hero h1 {
-  font-size: clamp(2.8rem, 6vw, 4.4rem); /* Premium clean heading clamp scaling */
-  font-weight: 700; /* Cleaned weight from ultra-thick 900 to balanced 700 */
-  line-height: 1.2; /* Widened tight layout compression lines */
+  font-size: clamp(2.8rem, 6vw, 4.4rem);
+  font-weight: 700;
+  line-height: 1.2;
   margin-bottom: 12px;
-  letter-spacing: -0.02em; /* Sleek structural geometric kerning style */
-  color: #ffffff; /* Solid premium white text profile */
+  letter-spacing: -0.02em;
+  color: #ffffff;
 }
 
-/* Forces highlighted inline name components to fall back to solid white */
 .hero h1 em {
   font-style: normal;
   background: none;
@@ -394,14 +425,14 @@ select {
 }
 
 .hero-type {
-  height: auto; /* Allow natural clean programmatic wrapper vertical wrapping flow */
+  height: auto;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-bottom: 18px;
-  font-size: 1.15rem; /* Upgraded text baseline footprint scale dimensions */
+  font-size: 1.15rem;
   font-weight: 500;
-  color: #9ca3af; /* Upgraded color to clean design slate gray text */
+  color: #9ca3af;
   font-family: 'JetBrains Mono', monospace;
 }
 
@@ -438,8 +469,8 @@ select {
 }
 
 .hero-tag {
-  font-size: 1rem; /* Scaled from .8rem to match subheadings layout perfectly */
-  color: #9ca3af; /* Upgraded color tint profiles */
+  font-size: 1rem;
+  color: #9ca3af;
   font-weight: 400;
 }
 
@@ -452,11 +483,11 @@ select {
 }
 
 .hero-desc {
-  font-size: 1.05rem; /* Highly optimized description scale threshold */
-  color: #9ca3af; /* Brightened text layout color signature */
+  font-size: 1.05rem;
+  color: #9ca3af;
   margin-bottom: 38px;
-  line-height: 1.65; /* Balanced typographic line height spacing */
-  max-width: 660px; /* Constrains line tracking widths beautifully on desktop viewports */
+  line-height: 1.65;
+  max-width: 660px;
   margin-left: auto;
   margin-right: auto;
 }
@@ -634,7 +665,6 @@ select {
   object-fit: cover;
   border-radius: 50%;
 }
-
 
 /* ─── ABOUT ───────────────────────── */
 .about-grid {
