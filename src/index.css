@@ -2170,3 +2170,7 @@ textarea.c-input {
     grid-template-columns: 1fr;
   }
 }
+/* Hide the standard browser cursor everywhere */
+html, body, a, button, input, select, textarea, [role="button"], * {
+  cursor: none !important;
+}
