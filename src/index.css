@@ -328,16 +328,17 @@ select {
   position: relative;
   overflow: hidden;
   text-align: center;
-  background: #06060a;
+  background: #000000; /* Pure deep black background to match reference profile */
   padding: calc(var(--nav) + 48px) 0 100px;
 }
 
 .hero-content {
   position: relative;
   z-index: 2;
-  max-width: 780px;
+  max-width: 820px; /* Widened slightly to balance centralized font distribution */
   width: 100%;
   margin: 0 auto;
+  padding: 0 24px;
 }
 
 .hero-badge {
@@ -351,7 +352,7 @@ select {
   font-size: .78rem;
   font-weight: 600;
   color: #10b981;
-  margin-bottom: 28px;
+  margin-bottom: 32px; /* Adjusted spacing */
 }
 
 .hero-badge .dot {
@@ -363,13 +364,10 @@ select {
 }
 
 @keyframes pulse {
-
-  0%,
-  100% {
+  0%, 100% {
     opacity: 1;
     transform: scale(1)
   }
-
   50% {
     opacity: .5;
     transform: scale(1.6)
@@ -377,41 +375,43 @@ select {
 }
 
 .hero h1 {
-  font-size: clamp(2.6rem, 5.5vw, 4.8rem);
-  font-weight: 900;
-  line-height: 1.08;
-  margin-bottom: 18px;
-  letter-spacing: -2px;
-  color: #fff;
+  font-size: clamp(2.8rem, 6vw, 4.4rem); /* Premium clean heading clamp scaling */
+  font-weight: 700; /* Cleaned weight from ultra-thick 900 to balanced 700 */
+  line-height: 1.2; /* Widened tight layout compression lines */
+  margin-bottom: 12px;
+  letter-spacing: -0.02em; /* Sleek structural geometric kerning style */
+  color: #ffffff; /* Solid premium white text profile */
 }
 
+/* Forces highlighted inline name components to fall back to solid white */
 .hero h1 em {
   font-style: normal;
-  background: var(--grad);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  background: none;
+  -webkit-background-clip: unset;
+  -webkit-text-fill-color: #ffffff;
+  background-clip: unset;
+  color: #ffffff;
 }
 
 .hero-type {
-  height: 40px;
+  height: auto; /* Allow natural clean programmatic wrapper vertical wrapping flow */
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 16px;
-  font-size: 1.05rem;
+  margin-bottom: 18px;
+  font-size: 1.15rem; /* Upgraded text baseline footprint scale dimensions */
   font-weight: 500;
-  color: var(--text-2);
+  color: #9ca3af; /* Upgraded color to clean design slate gray text */
   font-family: 'JetBrains Mono', monospace;
 }
 
 .type-label {
-  color: var(--text-3);
+  color: #6b7280;
   margin-right: 8px;
 }
 
 .type-text {
-  color: var(--text-1);
+  color: #9ca3af;
 }
 
 .type-cur {
@@ -425,46 +425,45 @@ select {
 }
 
 @keyframes blink {
-  50% {
-    opacity: 0
-  }
+  50% { opacity: 0 }
 }
 
 .hero-tags {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  margin-bottom: 20px;
+  gap: 12px;
+  margin-bottom: 24px;
   flex-wrap: wrap;
 }
 
 .hero-tag {
-  font-size: .8rem;
-  color: var(--text-3);
+  font-size: 1rem; /* Scaled from .8rem to match subheadings layout perfectly */
+  color: #9ca3af; /* Upgraded color tint profiles */
+  font-weight: 400;
 }
 
 .hero-tag-sep {
-  width: 3px;
-  height: 3px;
+  width: 4px;
+  height: 4px;
   border-radius: 50%;
-  background: var(--text-3);
-  opacity: .35;
+  background: #9ca3af;
+  opacity: .5;
 }
 
 .hero-desc {
-  font-size: 1rem;
-  color: var(--text-2);
-  margin-bottom: 32px;
-  line-height: 1.8;
-  max-width: 540px;
+  font-size: 1.05rem; /* Highly optimized description scale threshold */
+  color: #9ca3af; /* Brightened text layout color signature */
+  margin-bottom: 38px;
+  line-height: 1.65; /* Balanced typographic line height spacing */
+  max-width: 660px; /* Constrains line tracking widths beautifully on desktop viewports */
   margin-left: auto;
   margin-right: auto;
 }
 
 .hero-btns {
   display: flex;
-  gap: 12px;
+  gap: 14px;
   flex-wrap: wrap;
   justify-content: center;
   margin-bottom: 44px;
@@ -565,12 +564,9 @@ select {
 }
 
 @keyframes scrollBob {
-
-  0%,
-  100% {
+  0%, 100% {
     transform: translateY(0)
   }
-
   50% {
     transform: translateY(5px)
   }
@@ -638,6 +634,7 @@ select {
   object-fit: cover;
   border-radius: 50%;
 }
+
 
 /* ─── ABOUT ───────────────────────── */
 .about-grid {
