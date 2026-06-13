@@ -6,7 +6,7 @@ const ICONS: Record<string, string> = {
   trophy: "🏆", code: "💻", "git-branch": "🌿", star: "⭐", award: "🎖️", medal: "🥇", default: "✨",
 };
 const CERT_ICOS = ["🎓","📜","🏅","⚡","🔬","☁️","🤖","📊","📈","🔢","🌐","💡","🧬","🔭","🎯"];
-const PROJ_ICOS: Record<string,string> = { NLP:"💬", ML:"🧠,👁️,📊,💬,🤖", "Computer Vision":"👁️", "Data Analysis":"📊", "Deep Learning":"🤖", Other:"📁" };
+const PROJ_ICOS: Record<string,string> = { NLP:"💬", ML:"🧠", "Computer Vision":"👁️", "Data Analysis":"📊", "Deep Learning":"🤖", Other:"📁" };
 
 // ────────────────────────────────────────────────────────────────────────────
 // Particle canvas (kept subtle, behind grid)
