@@ -1,5 +1,16 @@
 import type { PortfolioData } from "./types";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  setDoc,
+  collection,
+  getDocs,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  query,
+  orderBy,
+} from "firebase/firestore";
 import { db } from "./firebase";
 
 export const DEFAULT_DATA: PortfolioData = {
@@ -259,4 +270,57 @@ export async function setAdminPassword(newPassword: string): Promise<void> {
 export async function verifyPassword(input: string): Promise<boolean> {
   const correct = await getAdminPassword();
   return input === correct;
+}
+/* ─── MESSAGES (Firebase) ─────────────────────────────────────────── */
+
+const MESSAGES_COLLECTION = collection(db, "messages");
+
+export async function getMessages(): Promise<import("./types").Message[]> {
+  try {
+    const q = query(MESSAGES_COLLECTION, orderBy("sentAt", "desc"));
+    const snapshot = await getDocs(q);
+
+    return snapshot.docs.map((docSnap) => ({
+      id: docSnap.id,
+      ...(docSnap.data() as Omit<import("./types").Message, "id">),
+    }));
+  } catch (err) {
+    console.error("Error fetching messages:", err);
+    return [];
+  }
+}
+
+export async function addMessage(
+  msg: Omit<import("./types").Message, "id" | "sentAt" | "read">
+): Promise<void> {
+  try {
+    await addDoc(MESSAGES_COLLECTION, {
+      ...msg,
+      sentAt: new Date().toISOString(),
+      read: false,
+    });
+  } catch (err) {
+    console.error("Error adding message:", err);
+    throw err;
+  }
+}
+
+export async function markMessageRead(id: string): Promise<void> {
+  try {
+    await updateDoc(doc(db, "messages", id), {
+      read: true,
+    });
+  } catch (err) {
+    console.error("Error marking message as read:", err);
+    throw err;
+  }
+}
+
+export async function deleteMessage(id: string): Promise<void> {
+  try {
+    await deleteDoc(doc(db, "messages", id));
+  } catch (err) {
+    console.error("Error deleting message:", err);
+    throw err;
+  }
 }
