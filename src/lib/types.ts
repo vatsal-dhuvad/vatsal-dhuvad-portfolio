@@ -67,11 +67,23 @@ export interface Achievement {
 export interface SocialLinks {
   github: string;
   linkedin: string;
+  whatsapp: string; // New field added
   kaggle: string;
   leetcode: string;
   twitter: string;
   instagram: string;
   email: string;
+}
+
+// New interface added for contact forms
+export interface Message {
+  id: string;
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+  sentAt: string;
+  read: boolean;
 }
 
 export interface PortfolioData {
