@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { getAllData, addMessage } from "../lib/data";
+import { getAllData } from "../lib/data";
 import type { PortfolioData } from "../lib/types";
 
 const ICONS: Record<string, string> = {
@@ -70,7 +70,9 @@ export default function Portfolio() {
   const [certSearch,  setCertSearch]  = useState("");
   const [formOk,      setFormOk]      = useState(false);
 
-  useEffect(() => { setData(getAllData()); }, []);
+  useEffect(() => {
+    getAllData().then(fetched => setData(fetched));
+  }, []);
 
   // scroll + active section
   useEffect(() => {
@@ -145,21 +147,18 @@ export default function Portfolio() {
   };
 
   const handleContact = (e: React.FormEvent) => {
-    e.preventDefault();
-    const form = e.target as HTMLFormElement;
-    const fields = form.elements;
-    addMessage({
-      name:    (fields.namedItem("msg_name")    as HTMLInputElement).value,
-      email:   (fields.namedItem("msg_email")   as HTMLInputElement).value,
-      subject: (fields.namedItem("msg_subject") as HTMLInputElement).value,
-      message: (fields.namedItem("msg_body")    as HTMLTextAreaElement).value,
-    });
-    setFormOk(true);
+    e.preventDefault(); setFormOk(true);
     setTimeout(() => setFormOk(false), 3500);
-    form.reset();
+    (e.target as HTMLFormElement).reset();
   };
 
-  if (!data) return null;
+  if (!data) return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", background: "var(--bg-0)", color: "var(--text-0)", flexDirection: "column", gap: 16 }}>
+      <div style={{ width: 40, height: 40, border: "4px solid var(--text-3)", borderTopColor: "var(--primary)", borderRadius: "50%", animation: "spin 1s linear infinite" }} />
+      <h2 style={{ fontFamily: "monospace" }}>Loading Portfolio Data...</h2>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
   const { profile, skills, projects, certificates, education, experience, socialLinks } = data;
 
   const skillCats = ["All", ...Array.from(new Set(skills.map(s => s.category)))];
@@ -351,7 +350,7 @@ export default function Portfolio() {
                   <p>{p.description}</p>
                   <div className="proj-tags">{p.technologies.map(t => <span key={t} className="proj-tag">{t}</span>)}</div>
                   <div className="proj-links">
-                    {p.github && <a href={p.github} target="_blank" rel="noopener noreferrer" className="proj-lnk">🔗 GitHub</a>}
+                    {p.github && <a href={p.github} target="_blank" rel="noopener noreferrer" className="proj-lnk"><svg stroke="currentColor" fill="currentColor" strokeWidth="0" viewBox="0 0 496 512" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg" style={{ fontSize: "1.1rem" }}><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3 .3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5 .3-6.2 2.3zm44.2-1.7c-2.9 .7-4.9 2.6-4.6 4.9 .3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3 .7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3 .3 2.9 2.3 3.9 1.6 1 3.6 .7 4.3-.7 .7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3 .7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3 .7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"></path></svg> GitHub</a>}
                     {p.demo   && <a href={p.demo}   target="_blank" rel="noopener noreferrer" className="proj-lnk">🚀 Live Demo</a>}
                   </div>
                 </div>
@@ -458,44 +457,25 @@ export default function Portfolio() {
           <div className="contact-grid rv">
             <div>
               <div className="contact-infos">
-                {profile.email    && <div className="c-item"><div className="c-icon">✉️</div><div><h5>Email</h5><p>{profile.email}</p></div></div>}
-                {profile.phone    && <div className="c-item"><div className="c-icon">📱</div><div><h5>Phone</h5><p>{profile.phone}</p></div></div>}
-                {profile.location && <div className="c-item"><div className="c-icon">📍</div><div><h5>Location</h5><p>{profile.location}</p></div></div>}
+                {profile.email    && <div className="c-item" data-hover><div className="c-icon">✉️</div><div><h5>Email</h5><p>{profile.email}</p></div></div>}
+                {profile.phone    && <div className="c-item" data-hover><div className="c-icon">📱</div><div><h5>Phone</h5><p>{profile.phone}</p></div></div>}
+                {profile.location && <div className="c-item" data-hover><div className="c-icon">📍</div><div><h5>Location</h5><p>{profile.location}</p></div></div>}
               </div>
-
-              {/* ── Labelled social cards ── */}
-              <div className="social-cards">
-                {socialLinks.linkedin && (
-                  <a href={socialLinks.linkedin} target="_blank" rel="noopener noreferrer" className="social-card">
-                    <svg viewBox="0 0 24 24" fill="currentColor" className="social-card-ico"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
-                    <span>LinkedIn</span>
-                  </a>
-                )}
-                {socialLinks.github && (
-                  <a href={socialLinks.github} target="_blank" rel="noopener noreferrer" className="social-card">
-                    <svg viewBox="0 0 24 24" fill="currentColor" className="social-card-ico"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
-                    <span>GitHub</span>
-                  </a>
-                )}
-                {socialLinks.whatsapp && (
-                  <a href={`https://wa.me/${socialLinks.whatsapp.replace(/\D/g,"")}`} target="_blank" rel="noopener noreferrer" className="social-card social-card--wa">
-                    <svg viewBox="0 0 24 24" fill="currentColor" className="social-card-ico"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-                    <span>WhatsApp</span>
-                  </a>
-                )}
-                {socialLinks.kaggle    && <a href={socialLinks.kaggle}    target="_blank" rel="noopener noreferrer" className="soc-btn" title="Kaggle"   >📊</a>}
-                {socialLinks.leetcode  && <a href={socialLinks.leetcode}  target="_blank" rel="noopener noreferrer" className="soc-btn" title="LeetCode" >🧩</a>}
-                {socialLinks.twitter   && <a href={socialLinks.twitter}   target="_blank" rel="noopener noreferrer" className="soc-btn" title="Twitter"  >🐦</a>}
-                {socialLinks.instagram && <a href={socialLinks.instagram} target="_blank" rel="noopener noreferrer" className="soc-btn" title="Instagram">📸</a>}
+              <div className="socials">
+                {socialLinks.github    && <a href={socialLinks.github}    target="_blank" rel="noopener noreferrer" className="soc-btn" title="GitHub"    data-hover>🐙</a>}
+                {socialLinks.linkedin  && <a href={socialLinks.linkedin}  target="_blank" rel="noopener noreferrer" className="soc-btn" title="LinkedIn"  data-hover>💼</a>}
+                {socialLinks.kaggle    && <a href={socialLinks.kaggle}    target="_blank" rel="noopener noreferrer" className="soc-btn" title="Kaggle"    data-hover>📊</a>}
+                {socialLinks.leetcode  && <a href={socialLinks.leetcode}  target="_blank" rel="noopener noreferrer" className="soc-btn" title="LeetCode"  data-hover>🧩</a>}
+                {socialLinks.twitter   && <a href={socialLinks.twitter}   target="_blank" rel="noopener noreferrer" className="soc-btn" title="Twitter"   data-hover>🐦</a>}
+                {socialLinks.instagram && <a href={socialLinks.instagram} target="_blank" rel="noopener noreferrer" className="soc-btn" title="Instagram" data-hover>📸</a>}
               </div>
             </div>
-
             <form className="c-form" onSubmit={handleContact}>
-              <input  name="msg_name"    className="c-input" type="text"  placeholder="Your Name"    required />
-              <input  name="msg_email"   className="c-input" type="email" placeholder="Your Email"   required />
-              <input  name="msg_subject" className="c-input" type="text"  placeholder="Subject" />
-              <textarea name="msg_body"  className="c-input" placeholder="Your Message..." rows={5} required />
-              {formOk && <p className="form-success">✅ Message sent! I'll get back to you soon.</p>}
+              <input  className="c-input" type="text"  placeholder="Your Name"    required />
+              <input  className="c-input" type="email" placeholder="Your Email"   required />
+              <input  className="c-input" type="text"  placeholder="Subject" />
+              <textarea className="c-input" placeholder="Your Message..." rows={5} required />
+              {formOk && <p className="form-success">✅ Message sent! (Demo — configure email to receive messages.)</p>}
               <button type="submit" className="btn btn-grad" style={{ width:"100%", justifyContent:"center" }}>
                 ✉️ Send Message
               </button>
