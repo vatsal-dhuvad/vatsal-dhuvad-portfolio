@@ -203,11 +203,11 @@ export default function Portfolio() {
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
-  const { profile, skills, projects, certificates, education, experience, socialLinks } = data;
-  const heroBio = profile.heroBio?.trim() || profile.bio;
-  const whatsappNumber = getWhatsAppNumber(socialLinks.whatsapp || profile.phone);
-  const whatsappLabel = formatWhatsAppNumber(whatsappNumber);
-  const whatsappHref = whatsappNumber ? `https://wa.me/${whatsappNumber}` : "";
+const { profile, skills, projects, certificates, education, experience, socialLinks } = data;
+const heroBio = profile.heroBio?.trim() || profile.bio;
+
+const whatsappNumber = "919574788321";
+const whatsappHref = `https://wa.me/${whatsappNumber}`;
 
   const skillCats = ["All", ...Array.from(new Set(skills.map(s => s.category)))];
   const shownSkills = skillFilter === "All" ? skills : skills.filter(s => s.category === skillFilter);
@@ -512,7 +512,7 @@ export default function Portfolio() {
               <div className="socials">
                 {socialLinks.github    && <a href={socialLinks.github}    target="_blank" rel="noopener noreferrer" className="soc-btn" title="GitHub" aria-label="GitHub" data-hover><FaGithub /></a>}
                 {socialLinks.linkedin  && <a href={socialLinks.linkedin}  target="_blank" rel="noopener noreferrer" className="soc-btn" title="LinkedIn" aria-label="LinkedIn" data-hover><FaLinkedin /></a>}
-                {whatsappHref && <a href={whatsappHref} target="_blank" rel="noopener noreferrer" className="soc-btn soc-whatsapp" title={`WhatsApp ${whatsappLabel}`} aria-label={`WhatsApp ${whatsappLabel}`} data-hover><FaWhatsapp /><span>{whatsappLabel}</span></a>}
+                {whatsappHref          &&(<a href={whatsappHref}          target="_blank" rel="noopener noreferrer" className="soc-btn soc-whatsapp"title="WhatsApp"aria-label="WhatsApp"data-hover><FaWhatsapp/></a>)} 
                 {socialLinks.kaggle    && <a href={socialLinks.kaggle}    target="_blank" rel="noopener noreferrer" className="soc-btn" title="Kaggle"    data-hover>📊</a>}
                 {socialLinks.leetcode  && <a href={socialLinks.leetcode}  target="_blank" rel="noopener noreferrer" className="soc-btn" title="LeetCode"  data-hover>🧩</a>}
                 {socialLinks.twitter   && <a href={socialLinks.twitter}   target="_blank" rel="noopener noreferrer" className="soc-btn" title="Twitter"   data-hover>🐦</a>}
