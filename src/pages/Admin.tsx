@@ -2,14 +2,14 @@ import { useState, useEffect, useRef } from "react";
 import {
   getAllData, setData, addItem, updateItem, deleteItem,
   exportData, importData, resetToDefaults, verifyPassword, setAdminPassword,
-  DEFAULT_DATA
+  getMessages, markMessageRead, deleteMessage,
 } from "../lib/data";
 import type {
-  PortfolioData, Skill, Project, Certificate, Education, Experience,
+  PortfolioData, Skill, Project, Certificate, Education, Experience, Message,
 } from "../lib/types";
 import { showToast } from "../components/Toast";
 
-type Panel = "profile"|"skills"|"projects"|"certificates"|"education"|"experience"|"social"|"data"|"password";
+type Panel = "profile"|"skills"|"projects"|"certificates"|"education"|"experience"|"social"|"messages"|"data"|"password";
 type ModalMode =
   | { type: "skill"; item?: Skill }
   | { type: "project"; item?: Project }
@@ -23,33 +23,39 @@ export default function Admin() {
   const [pw, setPw] = useState("");
   const [loginErr, setLoginErr] = useState(false);
   const [panel, setPanel] = useState<Panel>("profile");
-  const [data, setLocalData] = useState<PortfolioData | null>(null);
+  const [data, setLocalData] = useState<PortfolioData>(getAllData());
   const [modal, setModal] = useState<ModalMode>(null);
+  const [msgs, setMsgs] = useState<Message[]>([]);
+  const [msgsLoading, setMsgsLoading] = useState(false);
   const importRef = useRef<HTMLInputElement>(null);
 
-  const refresh = async () => {
-    const fetched = await getAllData();
-    setLocalData(fetched);
+  const refreshMsgs = async () => {
+    setMsgsLoading(true);
+    try {
+      setMsgs(await getMessages());
+    } catch {
+      showToast("Could not load Firebase messages", "error");
+    } finally {
+      setMsgsLoading(false);
+    }
   };
 
-  useEffect(() => { refresh(); }, []);
+  const refresh = () => setLocalData(getAllData());
 
-  const [loggingIn, setLoggingIn] = useState(false);
-  const login = async () => {
-    setLoggingIn(true);
-    if (await verifyPassword(pw)) { setAuthed(true); setLoginErr(false); }
+  useEffect(() => {
+    if (authed) void refreshMsgs();
+  }, [authed]);
+
+  const login = () => {
+    if (verifyPassword(pw)) { setAuthed(true); setLoginErr(false); }
     else setLoginErr(true);
-    setLoggingIn(false);
   };
 
   // Profile
-  const [pf, setPf] = useState(DEFAULT_DATA.profile);
-  useEffect(() => { if (data) setPf(data.profile); }, [data]);
+  const [pf, setPf] = useState(data.profile);
+  useEffect(() => { setPf(data.profile); }, [data.profile]);
 
-  const saveProfile = async () => {
-    try { await setData("profile", pf); await refresh(); showToast("Profile saved!", "success"); }
-    catch (e: any) { showToast(e.message || "Failed to save", "error"); }
-  };
+  const saveProfile = () => { setData("profile", pf); refresh(); showToast("Profile saved!", "success"); };
 
   const handlePhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]; if (!f) return;
@@ -61,33 +67,60 @@ export default function Admin() {
   };
 
   // Social
-  const [sl, setSl] = useState(DEFAULT_DATA.socialLinks);
-  useEffect(() => { if (data) setSl(data.socialLinks); }, [data]);
-  const saveSocial = async () => {
-    try { await setData("socialLinks", sl); await refresh(); showToast("Social links saved!", "success"); }
-    catch (e: any) { showToast(e.message || "Failed to save", "error"); }
-  };
+  const [sl, setSl] = useState(data.socialLinks);
+  useEffect(() => { setSl(data.socialLinks); }, [data.socialLinks]);
+  const saveSocial = () => { setData("socialLinks", sl); refresh(); showToast("Social links saved!", "success"); };
 
   // Password
   const [pwCur, setPwCur] = useState(""); const [pwNew, setPwNew] = useState(""); const [pwCon, setPwCon] = useState("");
-  const changePassword = async () => {
-    if (!(await verifyPassword(pwCur))) { showToast("Current password incorrect", "error"); return; }
+  const changePassword = () => {
+    if (!verifyPassword(pwCur)) { showToast("Current password incorrect", "error"); return; }
     if (pwNew !== pwCon) { showToast("Passwords don't match", "error"); return; }
     if (pwNew.length < 4) { showToast("Too short (min 4 chars)", "error"); return; }
-    await setAdminPassword(pwNew); setPwCur(""); setPwNew(""); setPwCon(""); showToast("Password updated!", "success");
+    setAdminPassword(pwNew); setPwCur(""); setPwNew(""); setPwCon(""); showToast("Password updated!", "success");
   };
 
   // Import
   const handleImport = () => {
     const file = importRef.current?.files?.[0]; if (!file) { showToast("Select a file first", "error"); return; }
-    const r = new FileReader(); r.onload = async () => {
-      if (await importData(r.result as string)) { await refresh(); showToast("Data imported!", "success"); }
+    const r = new FileReader(); r.onload = () => {
+      if (importData(r.result as string)) { refresh(); showToast("Data imported!", "success"); }
       else showToast("Import failed — invalid file", "error");
     }; r.readAsText(file);
   };
 
-  const handleReset = async () => {
-    if (confirm("Reset ALL data to defaults? This cannot be undone.")) { await resetToDefaults(); await refresh(); showToast("Reset to defaults!", "info"); }
+  const handleReset = () => {
+    if (confirm("Reset ALL data to defaults? This cannot be undone.")) { resetToDefaults(); refresh(); showToast("Reset to defaults!", "info"); }
+  };
+
+  const markRead = async (id: string) => {
+    try {
+      await markMessageRead(id);
+      await refreshMsgs();
+    } catch {
+      showToast("Could not update message", "error");
+    }
+  };
+
+  const removeMessage = async (id: string) => {
+    try {
+      await deleteMessage(id);
+      await refreshMsgs();
+      showToast("Deleted", "info");
+    } catch {
+      showToast("Could not delete message", "error");
+    }
+  };
+
+  const deleteAllMessages = async () => {
+    if (!confirm("Delete all messages?")) return;
+    try {
+      await Promise.all(msgs.map((m) => deleteMessage(m.id)));
+      await refreshMsgs();
+      showToast("All messages deleted", "info");
+    } catch {
+      showToast("Could not delete all messages", "error");
+    }
   };
 
   if (!authed) return (
@@ -97,14 +130,15 @@ export default function Admin() {
         <div className="login-sub">Portfolio Admin</div>
         <input className="login-input" type="password" placeholder="Enter admin password" value={pw}
           onChange={(e) => setPw(e.target.value)} onKeyDown={(e) => e.key === "Enter" && login()} autoFocus />
-        <button className="login-btn" onClick={login} disabled={loggingIn}>{loggingIn ? "Connecting..." : "Sign In"}</button>
+        <button className="login-btn" onClick={login}>Sign In</button>
         {loginErr && <p className="login-err">Incorrect password. Try again.</p>}
         <p className="login-hint">Enter your admin password to continue.</p>
       </div>
     </div>
   );
 
-  const nav: { key: Panel; icon: string; label: string }[] = [
+  const unread = msgs.filter(m => !m.read).length;
+  const nav: { key: Panel; icon: string; label: string; badge?: number }[] = [
     { key: "profile", icon: "👤", label: "Profile" },
     { key: "skills", icon: "📊", label: "Skills" },
     { key: "projects", icon: "📁", label: "Projects" },
@@ -112,13 +146,12 @@ export default function Admin() {
     { key: "education", icon: "🎓", label: "Education" },
     { key: "experience", icon: "💼", label: "Experience" },
     { key: "social", icon: "🔗", label: "Social Links" },
+    { key: "messages", icon: "✉️", label: "Messages", badge: unread },
   ];
   const nav2: { key: Panel; icon: string; label: string }[] = [
     { key: "data", icon: "🗄️", label: "Data Management" },
     { key: "password", icon: "🔒", label: "Change Password" },
   ];
-
-  if (!data) return <div style={{color:"white", padding: 40}}>Loading data from database...</div>;
 
   return (
     <div className="admin-bg admin-layout">
@@ -129,6 +162,7 @@ export default function Admin() {
           {nav.map((n) => (
             <button key={n.key} className={`sb-link${panel === n.key ? " act" : ""}`} onClick={() => setPanel(n.key)}>
               <span>{n.icon}</span>{n.label}
+              {n.badge ? <span className="sb-badge">{n.badge}</span> : null}
             </button>
           ))}
           <div className="sb-sep" />
@@ -155,7 +189,8 @@ export default function Admin() {
                 <div className="f-row"><label>Phone</label><input value={pf.phone} onChange={(e) => setPf({ ...pf, phone: e.target.value })} /></div>
                 <div className="f-row"><label>Location</label><input value={pf.location} onChange={(e) => setPf({ ...pf, location: e.target.value })} /></div>
                 <div className="f-row"><label>Taglines (comma-separated)</label><input value={pf.taglines.join(", ")} onChange={(e) => setPf({ ...pf, taglines: e.target.value.split(",").map((t) => t.trim()).filter(Boolean) })} placeholder="Data Scientist, ML Engineer" /></div>
-                <div className="f-row full"><label>Bio / About Me</label><textarea rows={5} value={pf.bio} onChange={(e) => setPf({ ...pf, bio: e.target.value })} /></div>
+                <div className="f-row full"><label>First Page About Text</label><textarea rows={3} value={pf.heroBio} onChange={(e) => setPf({ ...pf, heroBio: e.target.value })} /></div>
+                <div className="f-row full"><label>Bio / About Me Section</label><textarea rows={5} value={pf.bio} onChange={(e) => setPf({ ...pf, bio: e.target.value })} /></div>
                 <div className="f-row">
                   <label>Profile Photo (upload)</label>
                   <input type="file" accept="image/*" onChange={handlePhoto} />
@@ -174,13 +209,7 @@ export default function Admin() {
         {/* SKILLS */}
         {panel === "skills" && (
           <>
-            <div className="a-head">
-              <h1>📊 Skills</h1>
-              <div style={{display:'flex',gap:10}}>
-                <button className="btn-add" onClick={async () => { try { await setData("skills", data.skills); showToast("All skills saved!", "success"); } catch(e:any){ showToast(e.message||"Error", "error"); } }}>💾 Save Changes</button>
-                <button className="btn-add" onClick={() => setModal({ type: "skill" })}>+ Add Skill</button>
-              </div>
-            </div>
+            <div className="a-head"><h1>📊 Skills</h1><button className="btn-add" onClick={() => setModal({ type: "skill" })}>+ Add Skill</button></div>
             <div className="a-card" style={{ overflowX: "auto" }}>
               <table className="a-table">
                 <thead><tr><th>Skill</th><th>Level</th><th>Category</th><th>Actions</th></tr></thead>
@@ -195,7 +224,7 @@ export default function Admin() {
                       <td><span className="cat-badge">{s.category}</span></td>
                       <td style={{ display: "flex", gap: 8, alignItems: "center" }}>
                         <button className="btn-edit" onClick={() => setModal({ type: "skill", item: s })}>Edit</button>
-                        <button className="btn-del" onClick={async () => { await deleteItem("skills", s.id); await refresh(); showToast("Deleted", "info"); }}>Delete</button>
+                        <button className="btn-del" onClick={() => { deleteItem("skills", s.id); refresh(); showToast("Deleted", "info"); }}>Delete</button>
                       </td>
                     </tr>
                   ))}
@@ -208,13 +237,7 @@ export default function Admin() {
         {/* PROJECTS */}
         {panel === "projects" && (
           <>
-            <div className="a-head">
-              <h1>📁 Projects</h1>
-              <div style={{display:'flex',gap:10}}>
-                <button className="btn-add" onClick={async () => { try { await setData("projects", data.projects); showToast("All projects saved!", "success"); } catch(e:any){ showToast(e.message||"Error", "error"); } }}>💾 Save Changes</button>
-                <button className="btn-add" onClick={() => setModal({ type: "project" })}>+ Add Project</button>
-              </div>
-            </div>
+            <div className="a-head"><h1>📁 Projects</h1><button className="btn-add" onClick={() => setModal({ type: "project" })}>+ Add Project</button></div>
             <div className="a-grid">
               {data.projects.map((p) => (
                 <div key={p.id} className="a-card a-item">
@@ -224,7 +247,7 @@ export default function Admin() {
                   <div className="tags">{p.technologies.slice(0, 4).map((t) => <span key={t} className="tag">{t}</span>)}</div>
                   <div className="a-item-footer">
                     <button className="btn-edit" onClick={() => setModal({ type: "project", item: p })}>Edit</button>
-                    <button className="btn-del" onClick={async () => { await deleteItem("projects", p.id); await refresh(); showToast("Deleted", "info"); }}>Delete</button>
+                    <button className="btn-del" onClick={() => { deleteItem("projects", p.id); refresh(); showToast("Deleted", "info"); }}>Delete</button>
                   </div>
                 </div>
               ))}
@@ -235,13 +258,7 @@ export default function Admin() {
         {/* CERTIFICATES */}
         {panel === "certificates" && (
           <>
-            <div className="a-head">
-              <h1>🏅 Certificates</h1>
-              <div style={{display:'flex',gap:10}}>
-                <button className="btn-add" onClick={async () => { try { await setData("certificates", data.certificates); showToast("All certificates saved!", "success"); } catch(e:any){ showToast(e.message||"Error", "error"); } }}>💾 Save Changes</button>
-                <button className="btn-add" onClick={() => setModal({ type: "certificate" })}>+ Add Certificate</button>
-              </div>
-            </div>
+            <div className="a-head"><h1>🏅 Certificates</h1><button className="btn-add" onClick={() => setModal({ type: "certificate" })}>+ Add Certificate</button></div>
             <div className="a-grid">
               {data.certificates.map((c) => (
                 <div key={c.id} className="a-card a-item">
@@ -250,7 +267,7 @@ export default function Admin() {
                   <p style={{ color: "var(--text-3)", fontSize: ".78rem", marginBottom: 16 }}>{c.date}</p>
                   <div className="a-item-footer">
                     <button className="btn-edit" onClick={() => setModal({ type: "certificate", item: c })}>Edit</button>
-                    <button className="btn-del" onClick={async () => { await deleteItem("certificates", c.id); await refresh(); showToast("Deleted", "info"); }}>Delete</button>
+                    <button className="btn-del" onClick={() => { deleteItem("certificates", c.id); refresh(); showToast("Deleted", "info"); }}>Delete</button>
                   </div>
                 </div>
               ))}
@@ -261,13 +278,7 @@ export default function Admin() {
         {/* EDUCATION */}
         {panel === "education" && (
           <>
-            <div className="a-head">
-              <h1>🎓 Education</h1>
-              <div style={{display:'flex',gap:10}}>
-                <button className="btn-add" onClick={async () => { try { await setData("education", data.education); showToast("All education saved!", "success"); } catch(e:any){ showToast(e.message||"Error", "error"); } }}>💾 Save Changes</button>
-                <button className="btn-add" onClick={() => setModal({ type: "education" })}>+ Add Education</button>
-              </div>
-            </div>
+            <div className="a-head"><h1>🎓 Education</h1><button className="btn-add" onClick={() => setModal({ type: "education" })}>+ Add Education</button></div>
             <div className="a-grid">
               {data.education.map((e) => (
                 <div key={e.id} className="a-card a-item">
@@ -277,7 +288,7 @@ export default function Admin() {
                   {e.grade && <p style={{ color: "var(--green)", fontSize: ".83rem", fontWeight: 700, marginBottom: 14 }}>Grade: {e.grade}</p>}
                   <div className="a-item-footer">
                     <button className="btn-edit" onClick={() => setModal({ type: "education", item: e })}>Edit</button>
-                    <button className="btn-del" onClick={async () => { await deleteItem("education", e.id); await refresh(); showToast("Deleted", "info"); }}>Delete</button>
+                    <button className="btn-del" onClick={() => { deleteItem("education", e.id); refresh(); showToast("Deleted", "info"); }}>Delete</button>
                   </div>
                 </div>
               ))}
@@ -288,13 +299,7 @@ export default function Admin() {
         {/* EXPERIENCE */}
         {panel === "experience" && (
           <>
-            <div className="a-head">
-              <h1>💼 Experience</h1>
-              <div style={{display:'flex',gap:10}}>
-                <button className="btn-add" onClick={async () => { try { await setData("experience", data.experience); showToast("All experience saved!", "success"); } catch(e:any){ showToast(e.message||"Error", "error"); } }}>💾 Save Changes</button>
-                <button className="btn-add" onClick={() => setModal({ type: "experience" })}>+ Add Experience</button>
-              </div>
-            </div>
+            <div className="a-head"><h1>💼 Experience</h1><button className="btn-add" onClick={() => setModal({ type: "experience" })}>+ Add Experience</button></div>
             <div className="a-grid">
               {data.experience.map((e) => (
                 <div key={e.id} className="a-card a-item">
@@ -304,7 +309,7 @@ export default function Admin() {
                   <div className="tags">{e.technologies.slice(0, 4).map((t) => <span key={t} className="tag">{t}</span>)}</div>
                   <div className="a-item-footer">
                     <button className="btn-edit" onClick={() => setModal({ type: "experience", item: e })}>Edit</button>
-                    <button className="btn-del" onClick={async () => { await deleteItem("experience", e.id); await refresh(); showToast("Deleted", "info"); }}>Delete</button>
+                    <button className="btn-del" onClick={() => { deleteItem("experience", e.id); refresh(); showToast("Deleted", "info"); }}>Delete</button>
                   </div>
                 </div>
               ))}
@@ -324,9 +329,53 @@ export default function Admin() {
                     <input type="url" value={sl[k]} onChange={(e) => setSl({ ...sl, [k]: e.target.value })} placeholder={`https://${k}.com/...`} />
                   </div>
                 ))}
+                <div className="f-row">
+                  <label>WhatsApp Number (with country code, e.g. 919574788321)</label>
+                  <input type="text" value={sl.whatsapp} onChange={(e) => setSl({ ...sl, whatsapp: e.target.value })} placeholder="919574788321" />
+                </div>
                 <div className="f-row full"><label>Email (for mailto links)</label><input type="email" value={sl.email} onChange={(e) => setSl({ ...sl, email: e.target.value })} /></div>
               </div>
             </div>
+          </>
+        )}
+
+        {/* MESSAGES */}
+        {panel === "messages" && (
+          <>
+            <div className="a-head">
+              <h1>✉️ Messages {unread > 0 && <span style={{ fontSize:"1rem", color:"var(--cyan)", fontWeight:600 }}>({unread} unread)</span>}</h1>
+              {msgs.length > 0 && (
+                <button className="btn-sec" onClick={() => void deleteAllMessages()}>
+                  🗑️ Delete All
+                </button>
+              )}
+            </div>
+            {msgsLoading ? (
+              <div className="empty"><div className="empty-icon">✉️</div><p>Loading Firebase messages...</p></div>
+            ) : msgs.length === 0 ? (
+              <div className="empty"><div className="empty-icon">✉️</div><p>No messages yet. Messages from the contact form will appear here.</p></div>
+            ) : (
+              <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+                {msgs.map((m) => (
+                  <div key={m.id} className={`msg-card${m.read ? "" : " msg-card--unread"}`}>
+                    <div className="msg-card-header">
+                      <div>
+                        <span className="msg-name">{m.name}</span>
+                        {!m.read && <span className="msg-new-badge">NEW</span>}
+                        <span className="msg-email">{m.email}</span>
+                      </div>
+                      <div style={{ display:"flex", gap:8, alignItems:"center" }}>
+                        <span className="msg-time">{new Date(m.sentAt).toLocaleString()}</span>
+                        {!m.read && <button className="btn-edit" onClick={() => void markRead(m.id)}>Mark Read</button>}
+                        <button className="btn-del" onClick={() => void removeMessage(m.id)}>Delete</button>
+                      </div>
+                    </div>
+                    {m.subject && <div className="msg-subject">Subject: {m.subject}</div>}
+                    <div className="msg-body">{m.message}</div>
+                  </div>
+                ))}
+              </div>
+            )}
           </>
         )}
 
@@ -338,7 +387,7 @@ export default function Admin() {
               <div className="dc">
                 <h3>📥 Export Backup</h3>
                 <p>Download all portfolio data as a JSON file. Good for backups before major changes.</p>
-                <button className="btn-add" onClick={async () => { await exportData(); showToast("Exported!", "success"); }}>Export JSON</button>
+                <button className="btn-add" onClick={() => { exportData(); showToast("Exported!", "success"); }}>Export JSON</button>
               </div>
               <div className="dc">
                 <h3>📤 Import Data</h3>
@@ -379,14 +428,10 @@ export default function Admin() {
 
 // ── Modals ──────────────────────────────────────────────────────────────────
 function ModalWrap({ modal, onClose, onSave }: { modal: NonNullable<ModalMode>; onClose: () => void; onSave: () => void }) {
-  const save = async (section: keyof PortfolioData, item: Record<string, unknown>) => {
-    try {
-      if ((item as { id?: string }).id) await updateItem(section, (item as { id: string }).id, item as never);
-      else await addItem(section, item as never);
-      onSave(); showToast("Saved!", "success");
-    } catch (e: any) {
-      showToast(e.message || "Failed to save", "error");
-    }
+  const save = (section: keyof PortfolioData, item: Record<string, unknown>) => {
+    if ((item as { id?: string }).id) updateItem(section, (item as { id: string }).id, item as never);
+    else addItem(section, item as never);
+    onSave(); showToast("Saved!", "success");
   };
   return (
     <div className="modal-bg open" onClick={(e) => e.target === e.currentTarget && onClose()}>

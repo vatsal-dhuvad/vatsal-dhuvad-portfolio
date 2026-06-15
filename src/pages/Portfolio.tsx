@@ -1,6 +1,20 @@
 import { useEffect, useRef, useState } from "react";
-import { getAllData } from "../lib/data";
+import { FaGithub, FaLinkedin, FaWhatsapp } from "react-icons/fa";
+import { addMessage, getAllData } from "../lib/data";
+import { showToast } from "../components/Toast";
 import type { PortfolioData } from "../lib/types";
+
+function getWhatsAppNumber(value: string): string {
+  return value.replace(/\D/g, "");
+}
+
+function formatWhatsAppNumber(value: string): string {
+  const digits = getWhatsAppNumber(value);
+  if (digits.length === 12 && digits.startsWith("91")) {
+    return `+91 ${digits.slice(2, 7)} ${digits.slice(7)}`;
+  }
+  return digits ? `+${digits}` : "";
+}
 
 const ICONS: Record<string, string> = {
   trophy: "🏆", code: "💻", "git-branch": "🌿", star: "⭐", award: "🎖️", medal: "🥇", default: "✨",
@@ -69,9 +83,11 @@ export default function Portfolio() {
   const [projFilter,  setProjFilter]  = useState("All");
   const [certSearch,  setCertSearch]  = useState("");
   const [formOk,      setFormOk]      = useState(false);
+  const [formErr,     setFormErr]     = useState("");
+  const [formSending, setFormSending] = useState(false);
 
   useEffect(() => {
-    getAllData().then(fetched => setData(fetched));
+    setData(getAllData());
   }, []);
 
   // scroll + active section
@@ -146,10 +162,38 @@ export default function Portfolio() {
     } else alert("Resume not uploaded yet — add it from the admin panel.");
   };
 
-  const handleContact = (e: React.FormEvent) => {
-    e.preventDefault(); setFormOk(true);
-    setTimeout(() => setFormOk(false), 3500);
-    (e.target as HTMLFormElement).reset();
+  const handleContact = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const formData = new FormData(form);
+    const message = {
+      name: String(formData.get("name") || "").trim(),
+      email: String(formData.get("email") || "").trim(),
+      subject: String(formData.get("subject") || "").trim(),
+      message: String(formData.get("message") || "").trim(),
+    };
+
+    if (!message.name || !message.email || !message.message) {
+      setFormErr("Please fill in your name, email, and message.");
+      return;
+    }
+
+    setFormSending(true);
+    setFormErr("");
+    setFormOk(false);
+
+    try {
+      await addMessage(message);
+      form.reset();
+      setFormOk(true);
+      showToast("Message sent successfully!", "success");
+      setTimeout(() => setFormOk(false), 3500);
+    } catch {
+      setFormErr("Message could not be sent. Please try again.");
+      showToast("Could not save message to Firebase.", "error");
+    } finally {
+      setFormSending(false);
+    }
   };
 
   if (!data) return (
@@ -160,6 +204,10 @@ export default function Portfolio() {
     </div>
   );
   const { profile, skills, projects, certificates, education, experience, socialLinks } = data;
+  const heroBio = profile.heroBio?.trim() || profile.bio;
+  const whatsappNumber = getWhatsAppNumber(socialLinks.whatsapp || profile.phone);
+  const whatsappLabel = formatWhatsAppNumber(whatsappNumber);
+  const whatsappHref = whatsappNumber ? `https://wa.me/${whatsappNumber}` : "";
 
   const skillCats = ["All", ...Array.from(new Set(skills.map(s => s.category)))];
   const shownSkills = skillFilter === "All" ? skills : skills.filter(s => s.category === skillFilter);
@@ -232,7 +280,7 @@ export default function Portfolio() {
             </div>
 
             {/* Description */}
-            <p className="hero-desc">{profile.bio.slice(0, 170)}...</p>
+            <p className="hero-desc">{heroBio}</p>
 
             {/* Buttons */}
             <div className="hero-btns">
@@ -272,7 +320,7 @@ export default function Portfolio() {
               <div className="about-img-box">
                 {profile.photoBase64
                   ? <img src={profile.photoBase64} alt={profile.name} />
-                  : <span className="about-placeholder">👤</span>}
+                  : <span className="about-placeholder">{ICONS.default}</span>}
               </div>
             </div>
             <div>
@@ -462,8 +510,9 @@ export default function Portfolio() {
                 {profile.location && <div className="c-item" data-hover><div className="c-icon">📍</div><div><h5>Location</h5><p>{profile.location}</p></div></div>}
               </div>
               <div className="socials">
-                {socialLinks.github    && <a href={socialLinks.github}    target="_blank" rel="noopener noreferrer" className="soc-btn" title="GitHub"    data-hover>🐙</a>}
-                {socialLinks.linkedin  && <a href={socialLinks.linkedin}  target="_blank" rel="noopener noreferrer" className="soc-btn" title="LinkedIn"  data-hover>💼</a>}
+                {socialLinks.github    && <a href={socialLinks.github}    target="_blank" rel="noopener noreferrer" className="soc-btn" title="GitHub" aria-label="GitHub" data-hover><FaGithub /></a>}
+                {socialLinks.linkedin  && <a href={socialLinks.linkedin}  target="_blank" rel="noopener noreferrer" className="soc-btn" title="LinkedIn" aria-label="LinkedIn" data-hover><FaLinkedin /></a>}
+                {whatsappHref && <a href={whatsappHref} target="_blank" rel="noopener noreferrer" className="soc-btn soc-whatsapp" title={`WhatsApp ${whatsappLabel}`} aria-label={`WhatsApp ${whatsappLabel}`} data-hover><FaWhatsapp /><span>{whatsappLabel}</span></a>}
                 {socialLinks.kaggle    && <a href={socialLinks.kaggle}    target="_blank" rel="noopener noreferrer" className="soc-btn" title="Kaggle"    data-hover>📊</a>}
                 {socialLinks.leetcode  && <a href={socialLinks.leetcode}  target="_blank" rel="noopener noreferrer" className="soc-btn" title="LeetCode"  data-hover>🧩</a>}
                 {socialLinks.twitter   && <a href={socialLinks.twitter}   target="_blank" rel="noopener noreferrer" className="soc-btn" title="Twitter"   data-hover>🐦</a>}
@@ -471,13 +520,14 @@ export default function Portfolio() {
               </div>
             </div>
             <form className="c-form" onSubmit={handleContact}>
-              <input  className="c-input" type="text"  placeholder="Your Name"    required />
-              <input  className="c-input" type="email" placeholder="Your Email"   required />
-              <input  className="c-input" type="text"  placeholder="Subject" />
-              <textarea className="c-input" placeholder="Your Message..." rows={5} required />
-              {formOk && <p className="form-success">✅ Message sent! (Demo — configure email to receive messages.)</p>}
-              <button type="submit" className="btn btn-grad" style={{ width:"100%", justifyContent:"center" }}>
-                ✉️ Send Message
+              <input  className="c-input" name="name" type="text"  placeholder="Your Name"    required />
+              <input  className="c-input" name="email" type="email" placeholder="Your Email"   required />
+              <input  className="c-input" name="subject" type="text"  placeholder="Subject" />
+              <textarea className="c-input" name="message" placeholder="Your Message..." rows={5} required />
+              {formOk && <p className="form-success">Message sent successfully.</p>}
+              {formErr && <p className="form-error">{formErr}</p>}
+              <button type="submit" disabled={formSending} className="btn btn-grad" style={{ width:"100%", justifyContent:"center" }}>
+                {formSending ? "Sending..." : "Send Message"}
               </button>
             </form>
           </div>
