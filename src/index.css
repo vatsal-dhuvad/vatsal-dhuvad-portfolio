@@ -1367,6 +1367,9 @@ html, body, a, button, input, select, textarea, [role="button"], * {
 .soc-btn:hover span {
   color: #fff;
 }
+.soc-linkedin:hover {
+  color: #0A66C2 !important;
+}
 
 .c-form {
   display: flex;
