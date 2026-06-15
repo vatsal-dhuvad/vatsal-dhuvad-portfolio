@@ -5,6 +5,7 @@ export interface Profile {
   email: string;
   phone: string;
   location: string;
+  heroBio: string;
   bio: string;
   resumeBase64: string;
   resumeFileName: string;
@@ -67,7 +68,7 @@ export interface Achievement {
 export interface SocialLinks {
   github: string;
   linkedin: string;
-  whatsapp: string; // New field added
+  whatsapp: string;
   kaggle: string;
   leetcode: string;
   twitter: string;
@@ -75,7 +76,6 @@ export interface SocialLinks {
   email: string;
 }
 
-// New interface added for contact forms
 export interface Message {
   id: string;
   name: string;
