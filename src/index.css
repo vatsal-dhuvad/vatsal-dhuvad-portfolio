@@ -1338,11 +1338,37 @@ html, body, a, button, input, select, textarea, [role="button"], * {
   transition: all .25s var(--ease);
 }
 
+.soc-btn svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.soc-whatsapp {
+  width: auto;
+  min-width: 176px;
+  gap: 8px;
+  padding: 0 14px;
+  justify-content: flex-start;
+  color: #25d366;
+  font-size: .9rem;
+  font-weight: 700;
+}
+
+.soc-whatsapp span {
+  white-space: nowrap;
+  color: var(--text-1);
+}
+
 .soc-btn:hover {
   background: var(--grad);
   border-color: transparent;
   transform: translateY(-3px);
   box-shadow: 0 6px 20px rgba(0, 229, 255, .2);
+}
+
+.soc-btn:hover,
+.soc-btn:hover span {
+  color: #fff;
 }
 
 .c-form {
@@ -1381,6 +1407,18 @@ textarea.c-input {
   font-size: .88rem;
   color: var(--green);
   font-weight: 600;
+}
+
+.form-error {
+  font-size: .88rem;
+  color: #f87171;
+  font-weight: 600;
+}
+
+.c-form .btn:disabled {
+  opacity: .65;
+  transform: none;
+  cursor: wait;
 }
 
 /* ─── FOOTER ──────────────────────── */
@@ -1843,6 +1881,84 @@ textarea.c-input {
   border: 1px solid rgba(139, 92, 246, .18);
 }
 
+.sb-badge {
+  margin-left: auto;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: rgba(0, 229, 255, .12);
+  color: var(--cyan);
+  border: 1px solid rgba(0, 229, 255, .22);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .72rem;
+  font-weight: 800;
+}
+
+.msg-card {
+  background: rgba(255, 255, 255, .025);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 22px;
+}
+
+.msg-card--unread {
+  border-color: rgba(0, 229, 255, .32);
+  background: rgba(0, 229, 255, .035);
+}
+
+.msg-card-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: flex-start;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.msg-name {
+  display: inline-block;
+  color: var(--text-1);
+  font-weight: 800;
+  margin-right: 8px;
+}
+
+.msg-new-badge {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: rgba(16, 185, 129, .12);
+  color: var(--green);
+  border: 1px solid rgba(16, 185, 129, .24);
+  font-size: .65rem;
+  font-weight: 800;
+  margin-right: 8px;
+}
+
+.msg-email,
+.msg-time {
+  color: var(--text-3);
+  font-size: .8rem;
+}
+
+.msg-subject {
+  color: var(--cyan);
+  font-size: .86rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.msg-body {
+  color: var(--text-2);
+  font-size: .9rem;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
 .modal-bg {
   position: fixed;
   inset: 0;
@@ -2200,4 +2316,12 @@ textarea.c-input {
 /* Hide the standard browser cursor everywhere */
 html, body, a, button, input, select, textarea, [role="button"], * {
   cursor: none !important;
+}
+@media (max-width: 768px) {
+  .hero h1 {
+    color: #ffffff !important;
+    font-weight: 800;
+    opacity: 1 !important;
+    text-shadow: 0 0 8px rgba(255,255,255,0.15);
+  }
 }
