@@ -154,9 +154,9 @@ export const DEFAULT_DATA: PortfolioData = {
 
 const STORAGE_KEY = "portfolio_data";
 const ADMIN_KEY = "portfolio_admin";
-export const DEFAULT_PASSWORD = "Vatsal2253@";
+export const DEFAULT_PASSWORD = "Vatsal2253";
 
-function cloneDefaultData(): PortfolioData {
+function cloneDefaultData(): PortfolioData {  
   return JSON.parse(JSON.stringify(DEFAULT_DATA)) as PortfolioData;
 }
 
