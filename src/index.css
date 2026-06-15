@@ -1344,19 +1344,16 @@ html, body, a, button, input, select, textarea, [role="button"], * {
 }
 
 .soc-whatsapp {
-  width: auto;
-  min-width: 176px;
-  gap: 8px;
-  padding: 0 14px;
-  justify-content: flex-start;
+  width: 46px;
+  min-width: 46px;
+  height: 46px;
+  padding: 0;
+  gap: 0;
+  justify-content: center;
   color: #25d366;
-  font-size: .9rem;
-  font-weight: 700;
 }
-
 .soc-whatsapp span {
-  white-space: nowrap;
-  color: var(--text-1);
+  display: none;
 }
 
 .soc-btn:hover {
