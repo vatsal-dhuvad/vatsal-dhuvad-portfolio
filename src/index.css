@@ -1367,8 +1367,18 @@ html, body, a, button, input, select, textarea, [role="button"], * {
 .soc-btn:hover span {
   color: #fff;
 }
-.soc-linkedin:hover {
-  color: #0A66C2 !important;
+a[title="LinkedIn"] {
+  color: #0A66C2;
+}
+
+a[title="LinkedIn"]:hover {
+  background: #0A66C2 !important;
+  border-color: #0A66C2 !important;
+  color: white !important;
+}
+
+a[title="LinkedIn"] svg {
+  color: #0A66C2;
 }
 
 .c-form {
