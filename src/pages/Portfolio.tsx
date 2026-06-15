@@ -511,7 +511,7 @@ const whatsappHref = `https://wa.me/${whatsappNumber}`;
               </div>
               <div className="socials">
                 {socialLinks.github    && <a href={socialLinks.github}    target="_blank" rel="noopener noreferrer" className="soc-btn" title="GitHub" aria-label="GitHub" data-hover><FaGithub /></a>}
-                {socialLinks.linkedin  && <a href={socialLinks.linkedin}  target="_blank" rel="noopener noreferrer" className="soc-btn" title="LinkedIn" aria-label="LinkedIn" data-hover><FaLinkedin /></a>}
+                {socialLinks.linkedin && <a href={socialLinks.linkedin} target="_blank" rel="noopener noreferrer" className="soc-btn soc-linkedin" title="LinkedIn" aria-label="LinkedIn" data-hover><FaLinkedin /></a>}
                 {whatsappHref          &&(<a href={whatsappHref}          target="_blank" rel="noopener noreferrer" className="soc-btn soc-whatsapp"title="WhatsApp"aria-label="WhatsApp"data-hover><FaWhatsapp/></a>)} 
                 {socialLinks.kaggle    && <a href={socialLinks.kaggle}    target="_blank" rel="noopener noreferrer" className="soc-btn" title="Kaggle"    data-hover>📊</a>}
                 {socialLinks.leetcode  && <a href={socialLinks.leetcode}  target="_blank" rel="noopener noreferrer" className="soc-btn" title="LeetCode"  data-hover>🧩</a>}
