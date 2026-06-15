@@ -1363,7 +1363,6 @@ html, body, a, button, input, select, textarea, [role="button"], * {
   box-shadow: 0 6px 20px rgba(0, 229, 255, .2);
 }
 
-.soc-btn:hover,
 .soc-btn:hover span {
   color: #fff;
 }
@@ -2334,4 +2333,38 @@ html, body, a, button, input, select, textarea, [role="button"], * {
     opacity: 1 !important;
     text-shadow: 0 0 8px rgba(255,255,255,0.15);
   }
+}
+/* Brand colors */
+a[title="GitHub"] svg {
+  color: #ffffff;
+}
+
+a[title="LinkedIn"] svg {
+  color: #0A66C2;
+}
+
+a[title="WhatsApp"] svg {
+  color: #25D366;
+}
+
+/* Keep icon color on hover */
+a[title="GitHub"]:hover svg {
+  color: #ffffff !important;
+}
+
+a[title="LinkedIn"] svg {
+  color: #0A66C2;
+}
+
+a[title="LinkedIn"]:hover {
+  background: #0A66C2 !important;
+  border-color: #0A66C2 !important;
+}
+
+a[title="LinkedIn"]:hover svg {
+  color: white !important;
+}
+
+a[title="WhatsApp"]:hover svg {
+  color: #25D366 !important;
 }
