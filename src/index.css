@@ -1692,6 +1692,19 @@ textarea.c-input {
   min-height: 100vh;
 }
 
+.admin-loading {
+  display: inline-flex;
+  align-items: center;
+  margin-bottom: 18px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 229, 255, .18);
+  background: rgba(0, 229, 255, .06);
+  color: var(--cyan);
+  font-size: .78rem;
+  font-weight: 700;
+}
+
 .a-head {
   display: flex;
   justify-content: space-between;
@@ -2360,6 +2373,7 @@ a[title="LinkedIn"]:hover {
   background: #0A66C2 !important;
   border-color: #0A66C2 !important;
 }
+
 
 a[title="LinkedIn"]:hover svg {
   color: white !important;
