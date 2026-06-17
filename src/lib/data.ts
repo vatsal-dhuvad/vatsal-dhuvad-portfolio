@@ -1,17 +1,15 @@
 import {
-  addDoc,
-  collection,
-  deleteDoc,
   doc,
-  getDocs,
-  orderBy,
-  query,
-  serverTimestamp,
-  updateDoc,
+  getDoc,
+  setDoc,
 } from "firebase/firestore";
+
 import { db } from "./firebase";
-import type { DocumentData, QueryDocumentSnapshot } from "firebase/firestore";
-import type { Message, PortfolioData } from "./types";
+
+import type {
+  Message,
+  PortfolioData,
+} from "./types";
 
 export const DEFAULT_DATA: PortfolioData = {
   profile: {
@@ -150,11 +148,13 @@ export const DEFAULT_DATA: PortfolioData = {
     instagram: "",
     email: "vatsaldhuvad23@gmail.com",
   },
+  messages: [],
 };
 
 const STORAGE_KEY = "portfolio_data";
 const ADMIN_KEY = "portfolio_admin";
 export const DEFAULT_PASSWORD = "Vatsal2253";
+const PORTFOLIO_DOC = doc(db, "portfolio", "data");
 
 function cloneDefaultData(): PortfolioData {  
   return JSON.parse(JSON.stringify(DEFAULT_DATA)) as PortfolioData;
@@ -178,91 +178,157 @@ function normalizePortfolioData(raw: Partial<PortfolioData>): PortfolioData {
     ...raw,
     profile,
     socialLinks,
+    messages: Array.isArray(raw.messages) ? raw.messages : [],
   };
 }
 
-export function getAllData(): PortfolioData {
-  const stored = localStorage.getItem(STORAGE_KEY);
-  if (stored) {
-    try {
-      const normalized = normalizePortfolioData(JSON.parse(stored));
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
-      return normalized;
-    } catch {
-      // corrupt, reset
-    }
+function getCachedData(): PortfolioData | null {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    return stored ? normalizePortfolioData(JSON.parse(stored)) : null;
+  } catch {
+    return null;
   }
-  const defaults = cloneDefaultData();
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(defaults));
-  return defaults;
 }
 
-export function saveAllData(data: PortfolioData): void {
+function cacheData(data: PortfolioData): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 }
 
-export function getData<K extends keyof PortfolioData>(section: K): PortfolioData[K] {
-  return getAllData()[section];
+export async function getAllData(): Promise<PortfolioData> {
+  try {
+    const snap = await getDoc(PORTFOLIO_DOC);
+
+    if (snap.exists()) {
+      const data = normalizePortfolioData(snap.data() as Partial<PortfolioData>);
+      cacheData(data);
+      return data;
+    }
+
+    const firstData = getCachedData() ?? cloneDefaultData();
+    await setDoc(PORTFOLIO_DOC, firstData);
+    cacheData(firstData);
+
+    return firstData;
+  } catch {
+    return getCachedData() ?? cloneDefaultData();
+  }
 }
 
-export function setData<K extends keyof PortfolioData>(section: K, value: PortfolioData[K]): void {
-  const all = getAllData();
+export async function saveAllData(data: PortfolioData): Promise<void> {
+  const normalized = normalizePortfolioData(data);
+  await setDoc(PORTFOLIO_DOC, normalized);
+  cacheData(normalized);
+}
+
+export async function getData<K extends keyof PortfolioData>(section: K): Promise<PortfolioData[K]> {
+  return (await getAllData())[section];
+}
+
+export async function setData<K extends keyof PortfolioData>(
+  section: K,
+  value: PortfolioData[K]
+): Promise<void> {
+  const all = await getAllData();
   all[section] = value;
-  saveAllData(all);
+  await saveAllData(all);
 }
 
 function generateId(): string {
   return "id_" + Date.now() + "_" + Math.random().toString(36).substr(2, 6);
 }
 
-export function addItem<T extends { id: string }>(section: keyof PortfolioData, item: Omit<T, "id">): T {
-  const all = getAllData();
-  const newItem = { ...item, id: generateId() } as T;
+export async function addItem<T extends { id: string }>(
+  section: keyof PortfolioData,
+  item: Omit<T, "id">
+): Promise<T> {
+  const all = await getAllData();
+
+  const newItem = {
+    ...item,
+    id: generateId(),
+  } as T;
+
   (all[section] as unknown as T[]).push(newItem);
-  saveAllData(all);
+
+  await saveAllData(all);
+
   return newItem;
 }
 
-export function updateItem<T extends { id: string }>(section: keyof PortfolioData, id: string, updatedItem: Omit<T, "id">): void {
-  const all = getAllData();
+export async function updateItem<T extends { id: string }>(
+  section: keyof PortfolioData,
+  id: string,
+  updatedItem: Omit<T, "id">
+): Promise<void> {
+  const all = await getAllData();
+
   const arr = all[section] as unknown as T[];
+
   const index = arr.findIndex((i) => i.id === id);
+
   if (index !== -1) {
     arr[index] = { ...updatedItem, id } as T;
-    saveAllData(all);
+    await saveAllData(all);
   }
 }
 
-export function deleteItem(section: keyof PortfolioData, id: string): void {
-  const all = getAllData();
-  (all as Record<keyof PortfolioData, unknown>)[section] = (all[section] as unknown as { id: string }[]).filter((i) => i.id !== id);
-  saveAllData(all);
+export async function deleteItem(
+  section: keyof PortfolioData,
+  id: string
+): Promise<void> {
+  const all = await getAllData();
+
+  (all as Record<keyof PortfolioData, unknown>)[section] =
+    (all[section] as unknown as { id: string }[]).filter(
+      (i) => i.id !== id
+    );
+
+  await saveAllData(all);
 }
 
-export function exportData(): void {
-  const data = getAllData();
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+export async function exportData(): Promise<void> {
+  const data = await getAllData();
+
+  const blob = new Blob(
+    [JSON.stringify(data, null, 2)],
+    { type: "application/json" }
+  );
+
   const url = URL.createObjectURL(blob);
+
   const a = document.createElement("a");
+
   a.href = url;
-  a.download = `portfolio_backup_${new Date().toISOString().slice(0, 10)}.json`;
+  a.download = `portfolio_backup_${new Date()
+    .toISOString()
+    .slice(0, 10)}.json`;
+
   a.click();
+
   URL.revokeObjectURL(url);
 }
 
-export function importData(jsonString: string): boolean {
+export async function importData(
+  jsonString: string
+): Promise<boolean> {
   try {
     const data = JSON.parse(jsonString);
-    if (!data.profile || !data.skills || !data.projects) throw new Error("Invalid format");
-    saveAllData(normalizePortfolioData(data));
+
+    if (!data.profile || !data.skills || !data.projects) {
+      throw new Error("Invalid format");
+    }
+
+    await saveAllData(normalizePortfolioData(data));
+
     return true;
   } catch {
     return false;
   }
 }
 
-export function resetToDefaults(): void {
-  saveAllData(cloneDefaultData());
+export async function resetToDefaults(): Promise<void> {
+  await saveAllData(cloneDefaultData());
 }
 
 export function getAdminPassword(): string {
@@ -282,56 +348,45 @@ export function verifyPassword(input: string): boolean {
   return input === getAdminPassword();
 }
 
-/* ─── MESSAGES ─────────────────────────────────────────── */
-const MESSAGES_COLLECTION = "contactMessages";
-
-function fieldToString(value: unknown): string {
-  return typeof value === "string" ? value : "";
-}
-
-function sentAtToIso(value: unknown): string {
-  if (typeof value === "string") return value;
-  if (value && typeof value === "object" && "toDate" in value) {
-    const toDate = (value as { toDate?: () => Date }).toDate;
-    if (typeof toDate === "function") return toDate().toISOString();
-  }
-  return new Date().toISOString();
-}
-
-function messageFromSnapshot(snapshot: QueryDocumentSnapshot<DocumentData>): Message {
-  const data = snapshot.data();
-  return {
-    id: snapshot.id,
-    name: fieldToString(data.name),
-    email: fieldToString(data.email),
-    subject: fieldToString(data.subject),
-    message: fieldToString(data.message),
-    sentAt: sentAtToIso(data.sentAt),
-    read: data.read === true,
-  };
-}
-
 export async function getMessages(): Promise<Message[]> {
-  const q = query(collection(db, MESSAGES_COLLECTION), orderBy("sentAt", "desc"));
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map(messageFromSnapshot);
+  const data = await getAllData();
+  return [...data.messages].sort((a, b) => b.sentAt.localeCompare(a.sentAt));
 }
 
-export async function addMessage(msg: Omit<Message, "id" | "sentAt" | "read">): Promise<void> {
-  await addDoc(collection(db, MESSAGES_COLLECTION), {
+export async function addMessage(
+  msg: Omit<Message, "id" | "sentAt" | "read">
+): Promise<void> {
+  const data = await getAllData();
+  const newMessage: Message = {
+    id: "msg_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8),
     name: msg.name.trim(),
     email: msg.email.trim(),
     subject: msg.subject.trim(),
     message: msg.message.trim(),
-    sentAt: serverTimestamp(),
+    sentAt: new Date().toISOString(),
     read: false,
+  };
+
+  await saveAllData({
+    ...data,
+    messages: [newMessage, ...data.messages],
   });
 }
 
 export async function markMessageRead(id: string): Promise<void> {
-  await updateDoc(doc(db, MESSAGES_COLLECTION, id), { read: true });
+  const data = await getAllData();
+  await saveAllData({
+    ...data,
+    messages: data.messages.map((message) =>
+      message.id === id ? { ...message, read: true } : message
+    ),
+  });
 }
 
 export async function deleteMessage(id: string): Promise<void> {
-  await deleteDoc(doc(db, MESSAGES_COLLECTION, id));
+  const data = await getAllData();
+  await saveAllData({
+    ...data,
+    messages: data.messages.filter((message) => message.id !== id),
+  });
 }

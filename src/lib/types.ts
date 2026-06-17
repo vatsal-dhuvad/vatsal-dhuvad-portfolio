@@ -95,4 +95,5 @@ export interface PortfolioData {
   experience: Experience[];
   achievements: Achievement[];
   socialLinks: SocialLinks;
+  messages: Message[];
 }
