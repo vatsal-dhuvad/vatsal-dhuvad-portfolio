@@ -949,6 +949,7 @@ html, body, a, button, input, select, textarea, [role="button"], * {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform .25s var(--ease);
 }
 
 .proj-thumb-icon {
@@ -2181,6 +2182,40 @@ textarea.c-input {
   border-radius: 8px;
   margin-top: 10px;
   border: 1px solid var(--border-bright);
+}
+
+.project-crop-preview {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 8px;
+  margin-top: 10px;
+  border: 1px solid var(--border-bright);
+  background: rgba(255, 255, 255, .035);
+}
+
+.project-crop-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.crop-controls {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.crop-controls label {
+  margin: 0;
+  color: var(--text-2);
+  font-size: .74rem;
+}
+
+.crop-controls input[type="range"] {
+  padding: 0;
+  height: 5px;
 }
 
 .f-row input[type="range"] {
