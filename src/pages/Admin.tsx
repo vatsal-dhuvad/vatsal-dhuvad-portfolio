@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import {
-  getAllData, setData, addItem, updateItem, deleteItem,
+  DEFAULT_DATA, getAllData, setData, addItem, updateItem, deleteItem,
   exportData, importData, resetToDefaults, verifyPassword, setAdminPassword,
   getMessages, markMessageRead, deleteMessage,
 } from "../lib/data";
@@ -23,7 +23,8 @@ export default function Admin() {
   const [pw, setPw] = useState("");
   const [loginErr, setLoginErr] = useState(false);
   const [panel, setPanel] = useState<Panel>("profile");
-  const [data, setLocalData] = useState<PortfolioData>(getAllData());
+  const [data, setLocalData] = useState<PortfolioData>(DEFAULT_DATA);
+  const [dataLoading, setDataLoading] = useState(true);
   const [modal, setModal] = useState<ModalMode>(null);
   const [msgs, setMsgs] = useState<Message[]>([]);
   const [msgsLoading, setMsgsLoading] = useState(false);
@@ -40,7 +41,21 @@ export default function Admin() {
     }
   };
 
-  const refresh = () => setLocalData(getAllData());
+  const refresh = async () => {
+    setDataLoading(true);
+    try {
+      const fetched = await getAllData();
+      setLocalData(fetched);
+    } catch {
+      showToast("Could not load Firebase portfolio data", "error");
+    } finally {
+      setDataLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void refresh();
+  }, []);
 
   useEffect(() => {
     if (authed) void refreshMsgs();
@@ -52,11 +67,14 @@ export default function Admin() {
   };
 
   // Profile
-  const [pf, setPf] = useState(data.profile);
+  const [pf, setPf] = useState(DEFAULT_DATA.profile);
   useEffect(() => { setPf(data.profile); }, [data.profile]);
 
-  const saveProfile = () => { setData("profile", pf); refresh(); showToast("Profile saved!", "success"); };
-
+const saveProfile = async () => {
+  await setData("profile", pf);
+  await refresh();
+  showToast("Profile saved!", "success");
+};
   const handlePhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]; if (!f) return;
     const r = new FileReader(); r.onload = () => setPf((p) => ({ ...p, photoBase64: r.result as string })); r.readAsDataURL(f);
@@ -67,10 +85,13 @@ export default function Admin() {
   };
 
   // Social
-  const [sl, setSl] = useState(data.socialLinks);
+  const [sl, setSl] = useState(DEFAULT_DATA.socialLinks);
   useEffect(() => { setSl(data.socialLinks); }, [data.socialLinks]);
-  const saveSocial = () => { setData("socialLinks", sl); refresh(); showToast("Social links saved!", "success"); };
-
+const saveSocial = async () => {
+  await setData("socialLinks", sl);
+  await refresh();
+  showToast("Social links saved!", "success");
+};
   // Password
   const [pwCur, setPwCur] = useState(""); const [pwNew, setPwNew] = useState(""); const [pwCon, setPwCon] = useState("");
   const changePassword = () => {
@@ -83,14 +104,14 @@ export default function Admin() {
   // Import
   const handleImport = () => {
     const file = importRef.current?.files?.[0]; if (!file) { showToast("Select a file first", "error"); return; }
-    const r = new FileReader(); r.onload = () => {
-      if (importData(r.result as string)) { refresh(); showToast("Data imported!", "success"); }
+    const r = new FileReader(); r.onload = async () => {
+      if (await importData(r.result as string)) { await refresh(); showToast("Data imported to Firebase!", "success"); }
       else showToast("Import failed — invalid file", "error");
     }; r.readAsText(file);
   };
 
-  const handleReset = () => {
-    if (confirm("Reset ALL data to defaults? This cannot be undone.")) { resetToDefaults(); refresh(); showToast("Reset to defaults!", "info"); }
+  const handleReset = async () => {
+    if (confirm("Reset ALL data to defaults? This cannot be undone.")) { await resetToDefaults(); await refresh(); showToast("Reset to defaults!", "info"); }
   };
 
   const markRead = async (id: string) => {
@@ -120,6 +141,16 @@ export default function Admin() {
       showToast("All messages deleted", "info");
     } catch {
       showToast("Could not delete all messages", "error");
+    }
+  };
+
+  const removeItem = async (section: keyof PortfolioData, id: string) => {
+    try {
+      await deleteItem(section, id);
+      await refresh();
+      showToast("Deleted", "info");
+    } catch {
+      showToast("Could not delete item", "error");
     }
   };
 
@@ -176,6 +207,7 @@ export default function Admin() {
       </aside>
 
       <main className="a-main">
+        {dataLoading && <div className="admin-loading">Loading Firebase data...</div>}
 
         {/* PROFILE */}
         {panel === "profile" && (
@@ -224,7 +256,7 @@ export default function Admin() {
                       <td><span className="cat-badge">{s.category}</span></td>
                       <td style={{ display: "flex", gap: 8, alignItems: "center" }}>
                         <button className="btn-edit" onClick={() => setModal({ type: "skill", item: s })}>Edit</button>
-                        <button className="btn-del" onClick={() => { deleteItem("skills", s.id); refresh(); showToast("Deleted", "info"); }}>Delete</button>
+                        <button className="btn-del" onClick={() => void removeItem("skills", s.id)}>Delete</button>
                       </td>
                     </tr>
                   ))}
@@ -247,7 +279,7 @@ export default function Admin() {
                   <div className="tags">{p.technologies.slice(0, 4).map((t) => <span key={t} className="tag">{t}</span>)}</div>
                   <div className="a-item-footer">
                     <button className="btn-edit" onClick={() => setModal({ type: "project", item: p })}>Edit</button>
-                    <button className="btn-del" onClick={() => { deleteItem("projects", p.id); refresh(); showToast("Deleted", "info"); }}>Delete</button>
+                    <button className="btn-del" onClick={() => void removeItem("projects", p.id)}>Delete</button>
                   </div>
                 </div>
               ))}
@@ -267,7 +299,7 @@ export default function Admin() {
                   <p style={{ color: "var(--text-3)", fontSize: ".78rem", marginBottom: 16 }}>{c.date}</p>
                   <div className="a-item-footer">
                     <button className="btn-edit" onClick={() => setModal({ type: "certificate", item: c })}>Edit</button>
-                    <button className="btn-del" onClick={() => { deleteItem("certificates", c.id); refresh(); showToast("Deleted", "info"); }}>Delete</button>
+                    <button className="btn-del" onClick={() => void removeItem("certificates", c.id)}>Delete</button>
                   </div>
                 </div>
               ))}
@@ -288,7 +320,7 @@ export default function Admin() {
                   {e.grade && <p style={{ color: "var(--green)", fontSize: ".83rem", fontWeight: 700, marginBottom: 14 }}>Grade: {e.grade}</p>}
                   <div className="a-item-footer">
                     <button className="btn-edit" onClick={() => setModal({ type: "education", item: e })}>Edit</button>
-                    <button className="btn-del" onClick={() => { deleteItem("education", e.id); refresh(); showToast("Deleted", "info"); }}>Delete</button>
+                    <button className="btn-del" onClick={() => void removeItem("education", e.id)}>Delete</button>
                   </div>
                 </div>
               ))}
@@ -309,7 +341,7 @@ export default function Admin() {
                   <div className="tags">{e.technologies.slice(0, 4).map((t) => <span key={t} className="tag">{t}</span>)}</div>
                   <div className="a-item-footer">
                     <button className="btn-edit" onClick={() => setModal({ type: "experience", item: e })}>Edit</button>
-                    <button className="btn-del" onClick={() => { deleteItem("experience", e.id); refresh(); showToast("Deleted", "info"); }}>Delete</button>
+                    <button className="btn-del" onClick={() => void removeItem("experience", e.id)}>Delete</button>
                   </div>
                 </div>
               ))}
@@ -387,7 +419,7 @@ export default function Admin() {
               <div className="dc">
                 <h3>📥 Export Backup</h3>
                 <p>Download all portfolio data as a JSON file. Good for backups before major changes.</p>
-                <button className="btn-add" onClick={() => { exportData(); showToast("Exported!", "success"); }}>Export JSON</button>
+                <button className="btn-add" onClick={async () => { await exportData(); showToast("Exported!", "success"); }}>Export JSON</button>
               </div>
               <div className="dc">
                 <h3>📤 Import Data</h3>
@@ -428,20 +460,21 @@ export default function Admin() {
 
 // ── Modals ──────────────────────────────────────────────────────────────────
 function ModalWrap({ modal, onClose, onSave }: { modal: NonNullable<ModalMode>; onClose: () => void; onSave: () => void }) {
-  const save = (section: keyof PortfolioData, item: Record<string, unknown>) => {
-    if ((item as { id?: string }).id) updateItem(section, (item as { id: string }).id, item as never);
-    else addItem(section, item as never);
-    onSave(); showToast("Saved!", "success");
+  const save = async (section: keyof PortfolioData, item: Record<string, unknown>) => {
+    if ((item as { id?: string }).id) await updateItem(section, (item as { id: string }).id, item as never);
+    else await addItem(section, item as never);
+    onSave();
+    showToast("Saved to Firebase!", "success");
   };
   return (
     <div className="modal-bg open" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal-box">
         <button className="modal-close" onClick={onClose}>×</button>
-        {modal.type === "skill" && <SkillForm item={modal.item} onSave={(v) => save("skills", v as never)} />}
-        {modal.type === "project" && <ProjForm item={modal.item} onSave={(v) => save("projects", v as never)} />}
-        {modal.type === "certificate" && <CertForm item={modal.item} onSave={(v) => save("certificates", v as never)} />}
-        {modal.type === "education" && <EduForm item={modal.item} onSave={(v) => save("education", v as never)} />}
-        {modal.type === "experience" && <ExpForm item={modal.item} onSave={(v) => save("experience", v as never)} />}
+        {modal.type === "skill" && <SkillForm item={modal.item} onSave={(v) => void save("skills", v as never)} />}
+        {modal.type === "project" && <ProjForm item={modal.item} onSave={(v) => void save("projects", v as never)} />}
+        {modal.type === "certificate" && <CertForm item={modal.item} onSave={(v) => void save("certificates", v as never)} />}
+        {modal.type === "education" && <EduForm item={modal.item} onSave={(v) => void save("education", v as never)} />}
+        {modal.type === "experience" && <ExpForm item={modal.item} onSave={(v) => void save("experience", v as never)} />}
       </div>
     </div>
   );
