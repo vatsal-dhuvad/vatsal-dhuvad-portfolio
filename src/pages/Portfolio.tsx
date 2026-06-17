@@ -403,7 +403,27 @@ export default function Portfolio() {
             {shownProjs.map(p => (
               <div key={p.id} className="proj-card">
                 <div className="proj-thumb">
-                  {p.image ? <img src={p.image} alt={p.title}/> : <span className="proj-thumb-icon">{PROJ_ICOS[p.category]||"📁"}</span>}
+                  {p.image ? (
+                    <img
+                      src={p.image}
+                      alt={p.title}
+                      style={{
+                        objectPosition: `${p.imageFocusX ?? 50}% ${p.imageFocusY ?? 50}%`,
+                        transform: `scale(${p.imageZoom ?? 1})`,
+                        transformOrigin: `${p.imageFocusX ?? 50}% ${p.imageFocusY ?? 50}%`,
+                      }}
+                    />
+                  ) : (
+                    <div className="proj-thumb-art" aria-hidden="true">
+                      <span className="proj-art-ring" />
+                      <span className="proj-art-core">{PROJ_ICOS[p.category]||"✨"}</span>
+                      <span className="proj-art-node n1" />
+                      <span className="proj-art-node n2" />
+                      <span className="proj-art-node n3" />
+                      <span className="proj-art-line l1" />
+                      <span className="proj-art-line l2" />
+                    </div>
+                  )}
                   <span className="proj-badge">{p.category}</span>
                 </div>
                 <div className="proj-body">
