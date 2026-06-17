@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef } from "react";
+import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import {
   DEFAULT_DATA, getAllData, setData, addItem, updateItem, deleteItem,
   exportData, importData, resetToDefaults, verifyPassword, setAdminPassword,
   getMessages, markMessageRead, deleteMessage,
 } from "../lib/data";
+import { storage } from "../lib/firebase";
 import type {
   PortfolioData, Skill, Project, Certificate, Education, Experience, Message,
 } from "../lib/types";
@@ -499,6 +501,40 @@ function SkillForm({ item, onSave }: { item?: Skill; onSave: (v: Partial<Skill>)
 
 function ProjForm({ item, onSave }: { item?: Project; onSave: (v: Partial<Project>) => void }) {
   const [f, setF] = useState<Partial<Project>>(item || { title: "", description: "", technologies: [], category: "ML", github: "", demo: "", image: "" });
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const handleImageFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      showToast("Please select an image file", "error");
+      return;
+    }
+    setImageFile(file);
+    setPreview(URL.createObjectURL(file));
+  };
+
+  const uploadProjectImage = async (file: File): Promise<string> => {
+    const safeName = file.name.replace(/[^a-z0-9._-]/gi, "_").toLowerCase();
+    const imageRef = ref(storage, `project-images/${Date.now()}_${safeName}`);
+    await uploadBytes(imageRef, file);
+    return getDownloadURL(imageRef);
+  };
+
+  const saveProject = async () => {
+    setSaving(true);
+    try {
+      const image = imageFile ? await uploadProjectImage(imageFile) : f.image || "";
+      onSave({ ...f, image });
+    } catch {
+      showToast("Project image upload failed. Check Firebase Storage rules.", "error");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <>
       <h2>{item ? "Edit" : "Add"} Project</h2>
@@ -512,8 +548,15 @@ function ProjForm({ item, onSave }: { item?: Project; onSave: (v: Partial<Projec
       </div>
       <div className="f-row"><label>GitHub URL</label><input type="url" value={f.github || ""} onChange={(e) => setF({ ...f, github: e.target.value })} /></div>
       <div className="f-row"><label>Live Demo URL</label><input type="url" value={f.demo || ""} onChange={(e) => setF({ ...f, demo: e.target.value })} /></div>
-      <div className="f-row"><label>Image URL (optional)</label><input value={f.image || ""} onChange={(e) => setF({ ...f, image: e.target.value })} /></div>
-      <div className="f-actions"><button className="btn-add" onClick={() => onSave(f)}>Save</button></div>
+      <div className="f-row">
+        <label>Project Image (upload)</label>
+        <input type="file" accept="image/*" onChange={handleImageFile} />
+        {(preview || f.image) && (
+          <img src={preview || f.image} alt="Project preview" className="project-image-preview" />
+        )}
+      </div>
+      <div className="f-row"><label>Image URL (optional backup)</label><input value={f.image || ""} onChange={(e) => setF({ ...f, image: e.target.value })} /></div>
+      <div className="f-actions"><button className="btn-add" disabled={saving} onClick={() => void saveProject()}>{saving ? "Uploading..." : "Save"}</button></div>
     </>
   );
 }
