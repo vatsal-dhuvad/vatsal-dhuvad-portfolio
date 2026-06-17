@@ -2218,6 +2218,10 @@ textarea.c-input {
   height: 5px;
 }
 
+.project-image-remove {
+  margin-top: 12px;
+}
+
 .f-row input[type="range"] {
   padding: 0;
   background: transparent;
