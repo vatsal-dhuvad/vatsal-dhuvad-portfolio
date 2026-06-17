@@ -484,16 +484,25 @@ function ModalWrap({ modal, onClose, onSave }: { modal: NonNullable<ModalMode>; 
 
 function SkillForm({ item, onSave }: { item?: Skill; onSave: (v: Partial<Skill>) => void }) {
   const [f, setF] = useState<Partial<Skill>>(item || { name: "", level: 70, category: "Programming" });
+  const skillCategories = ["Programming", "ML", "AI", "Data Science", "Database", "Other"];
+  const isCustomCategory = Boolean(f.category && !skillCategories.includes(f.category));
+  const [categoryMode, setCategoryMode] = useState(isCustomCategory ? "Other" : f.category || "Programming");
   return (
     <>
       <h2>{item ? "Edit" : "Add"} Skill</h2>
       <div className="f-row"><label>Skill Name</label><input value={f.name || ""} onChange={(e) => setF({ ...f, name: e.target.value })} /></div>
       <div className="f-row"><label>Level: {f.level}%</label><input type="range" min={0} max={100} value={f.level ?? 70} onChange={(e) => setF({ ...f, level: +e.target.value })} /></div>
       <div className="f-row"><label>Category</label>
-        <select value={f.category || "Programming"} onChange={(e) => setF({ ...f, category: e.target.value })}>
-          {["Programming","ML & AI","Data Science","Tools"].map((c) => <option key={c}>{c}</option>)}
+        <select value={categoryMode} onChange={(e) => {
+          setCategoryMode(e.target.value);
+          setF({ ...f, category: e.target.value === "Other" ? "" : e.target.value });
+        }}>
+          {skillCategories.map((c) => <option key={c}>{c}</option>)}
         </select>
       </div>
+      {categoryMode === "Other" && (
+        <div className="f-row"><label>Custom Category</label><input value={f.category || ""} onChange={(e) => setF({ ...f, category: e.target.value })} placeholder="Write your category" /></div>
+      )}
       <div className="f-actions"><button className="btn-add" onClick={() => onSave(f)}>Save</button></div>
     </>
   );
