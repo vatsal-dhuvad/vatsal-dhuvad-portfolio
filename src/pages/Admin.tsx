@@ -509,10 +509,16 @@ function SkillForm({ item, onSave }: { item?: Skill; onSave: (v: Partial<Skill>)
 }
 
 function ProjForm({ item, onSave }: { item?: Project; onSave: (v: Partial<Project>) => void }) {
-  const [f, setF] = useState<Partial<Project>>(item || { title: "", description: "", technologies: [], category: "ML", github: "", demo: "", image: "" });
+  const [f, setF] = useState<Partial<Project>>(item || { title: "", description: "", technologies: [], category: "ML", github: "", demo: "", image: "", imageFocusX: 50, imageFocusY: 50, imageZoom: 1 });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [preview, setPreview] = useState("");
   const [saving, setSaving] = useState(false);
+  const projectCategories = ["AI", "ML", "Data Science", "Programming", "Database", "Other"];
+  const isCustomProjectCategory = Boolean(f.category && !projectCategories.includes(f.category));
+  const [categoryMode, setCategoryMode] = useState(isCustomProjectCategory ? "Other" : f.category || "ML");
+  const imageFocusX = f.imageFocusX ?? 50;
+  const imageFocusY = f.imageFocusY ?? 50;
+  const imageZoom = f.imageZoom ?? 1;
 
   const handleImageFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -536,7 +542,7 @@ function ProjForm({ item, onSave }: { item?: Project; onSave: (v: Partial<Projec
     setSaving(true);
     try {
       const image = imageFile ? await uploadProjectImage(imageFile) : f.image || "";
-      onSave({ ...f, image });
+      onSave({ ...f, image, imageFocusX, imageFocusY, imageZoom });
     } catch {
       showToast("Project image upload failed. Check Firebase Storage rules.", "error");
     } finally {
@@ -551,17 +557,43 @@ function ProjForm({ item, onSave }: { item?: Project; onSave: (v: Partial<Projec
       <div className="f-row"><label>Description</label><textarea value={f.description || ""} onChange={(e) => setF({ ...f, description: e.target.value })} /></div>
       <div className="f-row"><label>Technologies (comma-separated)</label><input value={(f.technologies || []).join(", ")} onChange={(e) => setF({ ...f, technologies: e.target.value.split(",").map((t) => t.trim()).filter(Boolean) })} /></div>
       <div className="f-row"><label>Category</label>
-        <select value={f.category || "ML"} onChange={(e) => setF({ ...f, category: e.target.value })}>
-          {["ML","NLP","Computer Vision","Data Analysis","Deep Learning","Other"].map((c) => <option key={c}>{c}</option>)}
+        <select value={categoryMode} onChange={(e) => {
+          setCategoryMode(e.target.value);
+          setF({ ...f, category: e.target.value === "Other" ? "" : e.target.value });
+        }}>
+          {projectCategories.map((c) => <option key={c}>{c}</option>)}
         </select>
       </div>
+      {categoryMode === "Other" && (
+        <div className="f-row"><label>Custom Category</label><input value={f.category || ""} onChange={(e) => setF({ ...f, category: e.target.value })} placeholder="Write your category" /></div>
+      )}
       <div className="f-row"><label>GitHub URL</label><input type="url" value={f.github || ""} onChange={(e) => setF({ ...f, github: e.target.value })} /></div>
       <div className="f-row"><label>Live Demo URL</label><input type="url" value={f.demo || ""} onChange={(e) => setF({ ...f, demo: e.target.value })} /></div>
       <div className="f-row">
         <label>Project Image (upload)</label>
         <input type="file" accept="image/*" onChange={handleImageFile} />
         {(preview || f.image) && (
-          <img src={preview || f.image} alt="Project preview" className="project-image-preview" />
+          <>
+            <div className="project-crop-preview">
+              <img
+                src={preview || f.image}
+                alt="Project preview"
+                style={{
+                  objectPosition: `${imageFocusX}% ${imageFocusY}%`,
+                  transform: `scale(${imageZoom})`,
+                  transformOrigin: `${imageFocusX}% ${imageFocusY}%`,
+                }}
+              />
+            </div>
+            <div className="crop-controls">
+              <label>Move Left / Right: {imageFocusX}%</label>
+              <input type="range" min={0} max={100} value={imageFocusX} onChange={(e) => setF({ ...f, imageFocusX: +e.target.value })} />
+              <label>Move Up / Down: {imageFocusY}%</label>
+              <input type="range" min={0} max={100} value={imageFocusY} onChange={(e) => setF({ ...f, imageFocusY: +e.target.value })} />
+              <label>Zoom: {imageZoom.toFixed(1)}x</label>
+              <input type="range" min={1} max={2} step={0.1} value={imageZoom} onChange={(e) => setF({ ...f, imageZoom: +e.target.value })} />
+            </div>
+          </>
         )}
       </div>
       <div className="f-row"><label>Image URL (optional backup)</label><input value={f.image || ""} onChange={(e) => setF({ ...f, image: e.target.value })} /></div>
