@@ -1437,6 +1437,20 @@ html, body, a, button, input, select, textarea, [role="button"], * {
 .soc-btn svg {
   width: 1.25rem;
   height: 1.25rem;
+  display: block;
+  flex-shrink: 0;
+  color: currentColor;
+  fill: currentColor;
+  opacity: 1;
+  visibility: visible;
+}
+
+.soc-github {
+  color: #ffffff;
+}
+
+.soc-linkedin {
+  color: #0A66C2;
 }
 
 .soc-whatsapp {
@@ -1447,6 +1461,13 @@ html, body, a, button, input, select, textarea, [role="button"], * {
   gap: 0;
   justify-content: center;
   color: #25d366;
+}
+
+.soc-github svg,
+.soc-linkedin svg,
+.soc-whatsapp svg {
+  color: currentColor !important;
+  fill: currentColor;
 }
 .soc-whatsapp span {
   display: none;
