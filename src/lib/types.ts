@@ -28,6 +28,9 @@ export interface Project {
   github: string;
   demo: string;
   image: string;
+  imageFocusX?: number;
+  imageFocusY?: number;
+  imageZoom?: number;
 }
 
 export interface Certificate {
