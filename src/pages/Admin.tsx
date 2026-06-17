@@ -512,6 +512,7 @@ function ProjForm({ item, onSave }: { item?: Project; onSave: (v: Partial<Projec
   const [f, setF] = useState<Partial<Project>>(item || { title: "", description: "", technologies: [], category: "ML", github: "", demo: "", image: "", imageFocusX: 50, imageFocusY: 50, imageZoom: 1 });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [preview, setPreview] = useState("");
+  const [removeImage, setRemoveImage] = useState(false);
   const [saving, setSaving] = useState(false);
   const projectCategories = ["AI", "ML", "Data Science", "Programming", "Database", "Other"];
   const isCustomProjectCategory = Boolean(f.category && !projectCategories.includes(f.category));
@@ -528,6 +529,7 @@ function ProjForm({ item, onSave }: { item?: Project; onSave: (v: Partial<Projec
       return;
     }
     setImageFile(file);
+    setRemoveImage(false);
     setPreview(URL.createObjectURL(file));
   };
 
@@ -541,8 +543,14 @@ function ProjForm({ item, onSave }: { item?: Project; onSave: (v: Partial<Projec
   const saveProject = async () => {
     setSaving(true);
     try {
-      const image = imageFile ? await uploadProjectImage(imageFile) : f.image || "";
-      onSave({ ...f, image, imageFocusX, imageFocusY, imageZoom });
+      const image = removeImage ? "" : imageFile ? await uploadProjectImage(imageFile) : f.image || "";
+      onSave({
+        ...f,
+        image,
+        imageFocusX: image ? imageFocusX : 50,
+        imageFocusY: image ? imageFocusY : 50,
+        imageZoom: image ? imageZoom : 1,
+      });
     } catch {
       showToast("Project image upload failed. Check Firebase Storage rules.", "error");
     } finally {
@@ -572,7 +580,7 @@ function ProjForm({ item, onSave }: { item?: Project; onSave: (v: Partial<Projec
       <div className="f-row">
         <label>Project Image (upload)</label>
         <input type="file" accept="image/*" onChange={handleImageFile} />
-        {(preview || f.image) && (
+        {(preview || f.image) && !removeImage && (
           <>
             <div className="project-crop-preview">
               <img
@@ -593,6 +601,18 @@ function ProjForm({ item, onSave }: { item?: Project; onSave: (v: Partial<Projec
               <label>Zoom: {imageZoom.toFixed(1)}x</label>
               <input type="range" min={1} max={2} step={0.1} value={imageZoom} onChange={(e) => setF({ ...f, imageZoom: +e.target.value })} />
             </div>
+            <button
+              type="button"
+              className="btn-del project-image-remove"
+              onClick={() => {
+                setImageFile(null);
+                setPreview("");
+                setRemoveImage(true);
+                setF({ ...f, image: "", imageFocusX: 50, imageFocusY: 50, imageZoom: 1 });
+              }}
+            >
+              Delete Image
+            </button>
           </>
         )}
       </div>
