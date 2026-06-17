@@ -484,7 +484,7 @@ function ModalWrap({ modal, onClose, onSave }: { modal: NonNullable<ModalMode>; 
 
 function SkillForm({ item, onSave }: { item?: Skill; onSave: (v: Partial<Skill>) => void }) {
   const [f, setF] = useState<Partial<Skill>>(item || { name: "", level: 70, category: "Programming" });
-  const skillCategories = ["Programming", "ML", "AI", "Data Science", "Database", "Other"];
+  const skillCategories = ["AI", "ML", "Data Science", "Database", "Other"];
   const isCustomCategory = Boolean(f.category && !skillCategories.includes(f.category));
   const [categoryMode, setCategoryMode] = useState(isCustomCategory ? "Other" : f.category || "Programming");
   return (
@@ -514,7 +514,7 @@ function ProjForm({ item, onSave }: { item?: Project; onSave: (v: Partial<Projec
   const [preview, setPreview] = useState("");
   const [removeImage, setRemoveImage] = useState(false);
   const [saving, setSaving] = useState(false);
-  const projectCategories = ["AI", "ML", "Data Science", "Programming", "Database", "Other"];
+  const projectCategories = ["AI", "ML", "Data Science", "Database", "Other"];
   const isCustomProjectCategory = Boolean(f.category && !projectCategories.includes(f.category));
   const [categoryMode, setCategoryMode] = useState(isCustomProjectCategory ? "Other" : f.category || "ML");
   const imageFocusX = f.imageFocusX ?? 50;
