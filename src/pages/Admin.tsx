@@ -31,6 +31,19 @@ type ModalMode =
 
 const MAX_FIRESTORE_IMAGE_BYTES = 700 * 1024;
 
+function firebaseErrorMessage(error: unknown, fallback: string): string {
+  if (!(error instanceof FirebaseError)) return fallback;
+
+  const messages: Record<string, string> = {
+    "permission-denied": "Permission denied. Check Firestore rules and admin email.",
+    "unauthenticated": "Please sign in again.",
+    "unavailable": "Firebase is temporarily unavailable. Try again.",
+    "failed-precondition": "Firestore needs an index or rule update.",
+  };
+
+  return messages[error.code] || `${fallback}: ${error.code}`;
+}
+
 function dataUrlBytes(dataUrl: string): number {
   const base64 = dataUrl.split(",")[1] || "";
   return Math.ceil((base64.length * 3) / 4);
@@ -90,8 +103,8 @@ export default function Admin() {
     setMsgsLoading(true);
     try {
       setMsgs(await getMessages());
-    } catch {
-      showToast("Could not load Firebase messages", "error");
+    } catch (error) {
+      showToast(firebaseErrorMessage(error, "Could not load Firebase messages"), "error");
     } finally {
       setMsgsLoading(false);
     }
@@ -102,8 +115,8 @@ export default function Admin() {
     try {
       const fetched = await getAllData();
       setLocalData(fetched);
-    } catch {
-      showToast("Could not load Firebase portfolio data", "error");
+    } catch (error) {
+      showToast(firebaseErrorMessage(error, "Could not load Firebase portfolio data"), "error");
     } finally {
       setDataLoading(false);
     }
@@ -211,8 +224,8 @@ const saveSocial = async () => {
     try {
       await markMessageRead(id);
       await refreshMsgs();
-    } catch {
-      showToast("Could not update message", "error");
+    } catch (error) {
+      showToast(firebaseErrorMessage(error, "Could not update message"), "error");
     }
   };
 
@@ -221,8 +234,8 @@ const saveSocial = async () => {
       await deleteMessage(id);
       await refreshMsgs();
       showToast("Deleted", "info");
-    } catch {
-      showToast("Could not delete message", "error");
+    } catch (error) {
+      showToast(firebaseErrorMessage(error, "Could not delete message"), "error");
     }
   };
 
@@ -232,8 +245,8 @@ const saveSocial = async () => {
       await Promise.all(msgs.map((m) => deleteMessage(m.id)));
       await refreshMsgs();
       showToast("All messages deleted", "info");
-    } catch {
-      showToast("Could not delete all messages", "error");
+    } catch (error) {
+      showToast(firebaseErrorMessage(error, "Could not delete all messages"), "error");
     }
   };
 
@@ -489,6 +502,9 @@ const saveSocial = async () => {
                 </button>
               )}
             </div>
+            <p style={{ color:"var(--text-3)", fontSize:".82rem", marginTop:-20, marginBottom:18 }}>
+              Signed in as {user?.email || "unknown"}
+            </p>
             {msgsLoading ? (
               <div className="empty"><div className="empty-icon">✉️</div><p>Loading Firebase messages...</p></div>
             ) : msgs.length === 0 ? (
