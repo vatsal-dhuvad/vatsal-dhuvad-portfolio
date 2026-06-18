@@ -87,7 +87,7 @@ export default function Admin() {
   const [authed, setAuthed] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [authChecking, setAuthChecking] = useState(true);
-  const [adminEmail, setAdminEmail] = useState("vatsaldhuvad23@gmail.com");
+  const [adminEmail, setAdminEmail] = useState("");
   const [pw, setPw] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginErr, setLoginErr] = useState("");
