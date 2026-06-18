@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { addMessage, getAllData } from "../lib/data";
 import { showToast } from "../components/Toast";
 import type { PortfolioData } from "../lib/types";
 
@@ -111,7 +110,8 @@ export default function Portfolio() {
 
   useEffect(() => {
     let alive = true;
-    getAllData()
+    import("../lib/data")
+      .then(({ getAllData }) => getAllData())
       .then((fetched) => {
         if (alive) setData(fetched);
       })
@@ -219,6 +219,7 @@ export default function Portfolio() {
     setFormOk(false);
 
     try {
+      const { addMessage } = await import("../lib/data");
       await addMessage(message);
       form.reset();
       setFormOk(true);

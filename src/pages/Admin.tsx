@@ -1,11 +1,19 @@
 import { useState, useEffect, useRef } from "react";
-import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import {
+  EmailAuthProvider,
+  onAuthStateChanged,
+  reauthenticateWithCredential,
+  signInWithEmailAndPassword,
+  signOut,
+  updatePassword,
+  type User,
+} from "firebase/auth";
 import {
   DEFAULT_DATA, getAllData, setData, addItem, updateItem, deleteItem,
-  exportData, importData, resetToDefaults, verifyPassword, setAdminPassword,
+  exportData, importData, resetToDefaults,
   getMessages, markMessageRead, deleteMessage,
 } from "../lib/data";
-import { storage } from "../lib/firebase";
+import { auth } from "../lib/auth";
 import type {
   PortfolioData, Skill, Project, Certificate, Education, Experience, Message,
 } from "../lib/types";
@@ -20,9 +28,54 @@ type ModalMode =
   | { type: "experience"; item?: Experience }
   | null;
 
+const MAX_FIRESTORE_IMAGE_BYTES = 700 * 1024;
+
+function dataUrlBytes(dataUrl: string): number {
+  const base64 = dataUrl.split(",")[1] || "";
+  return Math.ceil((base64.length * 3) / 4);
+}
+
+async function compressProjectImage(file: File): Promise<string> {
+  const imageUrl = URL.createObjectURL(file);
+
+  try {
+    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error("Image could not load"));
+      img.src = imageUrl;
+    });
+
+    const maxWidth = 900;
+    const scale = Math.min(1, maxWidth / image.naturalWidth);
+    const width = Math.max(1, Math.round(image.naturalWidth * scale));
+    const height = Math.max(1, Math.round(image.naturalHeight * scale));
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Canvas is not available");
+    ctx.drawImage(image, 0, 0, width, height);
+
+    for (const quality of [0.82, 0.72, 0.62, 0.52, 0.42]) {
+      const dataUrl = canvas.toDataURL("image/jpeg", quality);
+      if (dataUrlBytes(dataUrl) <= MAX_FIRESTORE_IMAGE_BYTES) return dataUrl;
+    }
+
+    throw new Error("Image is too large");
+  } finally {
+    URL.revokeObjectURL(imageUrl);
+  }
+}
+
 export default function Admin() {
   const [authed, setAuthed] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [authChecking, setAuthChecking] = useState(true);
+  const [adminEmail, setAdminEmail] = useState("vatsaldhuvad23@gmail.com");
   const [pw, setPw] = useState("");
+  const [loginLoading, setLoginLoading] = useState(false);
   const [loginErr, setLoginErr] = useState(false);
   const [panel, setPanel] = useState<Panel>("profile");
   const [data, setLocalData] = useState<PortfolioData>(DEFAULT_DATA);
@@ -56,16 +109,32 @@ export default function Admin() {
   };
 
   useEffect(() => {
-    void refresh();
+    return onAuthStateChanged(auth, (nextUser) => {
+      setUser(nextUser);
+      setAuthed(Boolean(nextUser));
+      setAuthChecking(false);
+    });
   }, []);
+
+  useEffect(() => {
+    if (authed) void refresh();
+  }, [authed]);
 
   useEffect(() => {
     if (authed) void refreshMsgs();
   }, [authed]);
 
-  const login = () => {
-    if (verifyPassword(pw)) { setAuthed(true); setLoginErr(false); }
-    else setLoginErr(true);
+  const login = async () => {
+    setLoginLoading(true);
+    setLoginErr(false);
+    try {
+      await signInWithEmailAndPassword(auth, adminEmail.trim(), pw);
+      setPw("");
+    } catch {
+      setLoginErr(true);
+    } finally {
+      setLoginLoading(false);
+    }
   };
 
   // Profile
@@ -96,11 +165,19 @@ const saveSocial = async () => {
 };
   // Password
   const [pwCur, setPwCur] = useState(""); const [pwNew, setPwNew] = useState(""); const [pwCon, setPwCon] = useState("");
-  const changePassword = () => {
-    if (!verifyPassword(pwCur)) { showToast("Current password incorrect", "error"); return; }
+  const changePassword = async () => {
+    if (!user?.email) { showToast("Please sign in again", "error"); return; }
     if (pwNew !== pwCon) { showToast("Passwords don't match", "error"); return; }
-    if (pwNew.length < 4) { showToast("Too short (min 4 chars)", "error"); return; }
-    setAdminPassword(pwNew); setPwCur(""); setPwNew(""); setPwCon(""); showToast("Password updated!", "success");
+    if (pwNew.length < 8) { showToast("Use at least 8 characters", "error"); return; }
+    try {
+      const credential = EmailAuthProvider.credential(user.email, pwCur);
+      await reauthenticateWithCredential(user, credential);
+      await updatePassword(user, pwNew);
+      setPwCur(""); setPwNew(""); setPwCon("");
+      showToast("Firebase password updated!", "success");
+    } catch {
+      showToast("Could not update password. Check current password.", "error");
+    }
   };
 
   // Import
@@ -156,16 +233,27 @@ const saveSocial = async () => {
     }
   };
 
+  if (authChecking) return (
+    <div className="admin-bg login-wrap">
+      <div className="login-box">
+        <div className="login-logo">&lt;<em>VD</em>/&gt;</div>
+        <div className="login-sub">Checking Admin Session</div>
+      </div>
+    </div>
+  );
+
   if (!authed) return (
     <div className="admin-bg login-wrap">
       <div className="login-box">
         <div className="login-logo">&lt;<em>VD</em>/&gt;</div>
         <div className="login-sub">Portfolio Admin</div>
+        <input className="login-input" type="email" placeholder="Admin email" value={adminEmail}
+          onChange={(e) => setAdminEmail(e.target.value)} autoComplete="username" />
         <input className="login-input" type="password" placeholder="Enter admin password" value={pw}
-          onChange={(e) => setPw(e.target.value)} onKeyDown={(e) => e.key === "Enter" && login()} autoFocus />
-        <button className="login-btn" onClick={login}>Sign In</button>
+          onChange={(e) => setPw(e.target.value)} onKeyDown={(e) => e.key === "Enter" && void login()} autoComplete="current-password" />
+        <button className="login-btn" disabled={loginLoading} onClick={() => void login()}>{loginLoading ? "Signing in..." : "Sign In"}</button>
         {loginErr && <p className="login-err">Incorrect password. Try again.</p>}
-        <p className="login-hint">Enter your admin password to continue.</p>
+        <p className="login-hint">Use the Firebase Auth admin account.</p>
       </div>
     </div>
   );
@@ -209,6 +297,9 @@ const saveSocial = async () => {
       </aside>
 
       <main className="a-main">
+        <div style={{ display:"flex", justifyContent:"flex-end", marginBottom: 10 }}>
+          <button className="btn-sec" onClick={() => void signOut(auth)}>Sign Out</button>
+        </div>
         {dataLoading && <div className="admin-loading">Loading Firebase data...</div>}
 
         {/* PROFILE */}
@@ -446,7 +537,7 @@ const saveSocial = async () => {
               <div className="f-row"><label>Current Password</label><input type="password" value={pwCur} onChange={(e) => setPwCur(e.target.value)} /></div>
               <div className="f-row"><label>New Password</label><input type="password" value={pwNew} onChange={(e) => setPwNew(e.target.value)} /></div>
               <div className="f-row"><label>Confirm New Password</label><input type="password" value={pwCon} onChange={(e) => setPwCon(e.target.value)} /></div>
-              <button className="btn-add" style={{ marginTop: 6 }} onClick={changePassword}>Update Password</button>
+              <button className="btn-add" style={{ marginTop: 6 }} onClick={() => void changePassword()}>Update Password</button>
             </div>
           </>
         )}
@@ -533,17 +624,10 @@ function ProjForm({ item, onSave }: { item?: Project; onSave: (v: Partial<Projec
     setPreview(URL.createObjectURL(file));
   };
 
-  const uploadProjectImage = async (file: File): Promise<string> => {
-    const safeName = file.name.replace(/[^a-z0-9._-]/gi, "_").toLowerCase();
-    const imageRef = ref(storage, `project-images/${Date.now()}_${safeName}`);
-    await uploadBytes(imageRef, file);
-    return getDownloadURL(imageRef);
-  };
-
   const saveProject = async () => {
     setSaving(true);
     try {
-      const image = removeImage ? "" : imageFile ? await uploadProjectImage(imageFile) : f.image || "";
+      const image = removeImage ? "" : imageFile ? await compressProjectImage(imageFile) : f.image || "";
       onSave({
         ...f,
         image,
@@ -552,7 +636,7 @@ function ProjForm({ item, onSave }: { item?: Project; onSave: (v: Partial<Projec
         imageZoom: image ? imageZoom : 1,
       });
     } catch {
-      showToast("Project image upload failed. Check Firebase Storage rules.", "error");
+      showToast("Image is too large. Please select a smaller image.", "error");
     } finally {
       setSaving(false);
     }
