@@ -1,7 +1,16 @@
 import {
+  addDoc,
+  collection,
+  deleteDoc,
   doc,
   getDoc,
+  getDocs,
+  orderBy,
+  query,
+  serverTimestamp,
   setDoc,
+  updateDoc,
+  type DocumentData,
 } from "firebase/firestore";
 
 import { db } from "./firebase";
@@ -152,9 +161,8 @@ export const DEFAULT_DATA: PortfolioData = {
 };
 
 const STORAGE_KEY = "portfolio_data";
-const ADMIN_KEY = "portfolio_admin";
-export const DEFAULT_PASSWORD = "Vatsal2253";
 const PORTFOLIO_DOC = doc(db, "portfolio", "data");
+const MESSAGES_COLLECTION = collection(db, "messages");
 
 function cloneDefaultData(): PortfolioData {  
   return JSON.parse(JSON.stringify(DEFAULT_DATA)) as PortfolioData;
@@ -182,6 +190,12 @@ function normalizePortfolioData(raw: Partial<PortfolioData>): PortfolioData {
   };
 }
 
+function portfolioWritePayload(data: PortfolioData): Omit<PortfolioData, "messages"> {
+  const { messages: _messages, ...payload } = normalizePortfolioData(data);
+  void _messages;
+  return payload;
+}
+
 function getCachedData(): PortfolioData | null {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -205,11 +219,7 @@ export async function getAllData(): Promise<PortfolioData> {
       return data;
     }
 
-    const firstData = getCachedData() ?? cloneDefaultData();
-    await setDoc(PORTFOLIO_DOC, firstData);
-    cacheData(firstData);
-
-    return firstData;
+    return getCachedData() ?? cloneDefaultData();
   } catch {
     return getCachedData() ?? cloneDefaultData();
   }
@@ -217,7 +227,7 @@ export async function getAllData(): Promise<PortfolioData> {
 
 export async function saveAllData(data: PortfolioData): Promise<void> {
   const normalized = normalizePortfolioData(data);
-  await setDoc(PORTFOLIO_DOC, normalized);
+  await setDoc(PORTFOLIO_DOC, portfolioWritePayload(normalized));
   cacheData(normalized);
 }
 
@@ -331,62 +341,53 @@ export async function resetToDefaults(): Promise<void> {
   await saveAllData(cloneDefaultData());
 }
 
-export function getAdminPassword(): string {
-  const stored = localStorage.getItem(ADMIN_KEY);
-  if (!stored || stored === "vatsal2024") {
-    localStorage.setItem(ADMIN_KEY, DEFAULT_PASSWORD);
-    return DEFAULT_PASSWORD;
+function firestoreDateToString(value: unknown): string {
+  if (typeof value === "string") return value;
+  if (
+    value &&
+    typeof value === "object" &&
+    "toDate" in value &&
+    typeof (value as { toDate: () => Date }).toDate === "function"
+  ) {
+    return (value as { toDate: () => Date }).toDate().toISOString();
   }
-  return stored;
+  return new Date().toISOString();
 }
 
-export function setAdminPassword(newPassword: string): void {
-  localStorage.setItem(ADMIN_KEY, newPassword);
-}
-
-export function verifyPassword(input: string): boolean {
-  return input === getAdminPassword();
+function normalizeMessageDoc(id: string, data: DocumentData): Message {
+  return {
+    id,
+    name: String(data.name || ""),
+    email: String(data.email || ""),
+    subject: String(data.subject || ""),
+    message: String(data.message || ""),
+    sentAt: firestoreDateToString(data.sentAt),
+    read: Boolean(data.read),
+  };
 }
 
 export async function getMessages(): Promise<Message[]> {
-  const data = await getAllData();
-  return [...data.messages].sort((a, b) => b.sentAt.localeCompare(a.sentAt));
+  const snap = await getDocs(query(MESSAGES_COLLECTION, orderBy("sentAt", "desc")));
+  return snap.docs.map((messageDoc) => normalizeMessageDoc(messageDoc.id, messageDoc.data()));
 }
 
 export async function addMessage(
   msg: Omit<Message, "id" | "sentAt" | "read">
 ): Promise<void> {
-  const data = await getAllData();
-  const newMessage: Message = {
-    id: "msg_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8),
+  await addDoc(MESSAGES_COLLECTION, {
     name: msg.name.trim(),
     email: msg.email.trim(),
     subject: msg.subject.trim(),
     message: msg.message.trim(),
-    sentAt: new Date().toISOString(),
+    sentAt: serverTimestamp(),
     read: false,
-  };
-
-  await saveAllData({
-    ...data,
-    messages: [newMessage, ...data.messages],
   });
 }
 
 export async function markMessageRead(id: string): Promise<void> {
-  const data = await getAllData();
-  await saveAllData({
-    ...data,
-    messages: data.messages.map((message) =>
-      message.id === id ? { ...message, read: true } : message
-    ),
-  });
+  await updateDoc(doc(db, "messages", id), { read: true });
 }
 
 export async function deleteMessage(id: string): Promise<void> {
-  const data = await getAllData();
-  await saveAllData({
-    ...data,
-    messages: data.messages.filter((message) => message.id !== id),
-  });
+  await deleteDoc(doc(db, "messages", id));
 }
