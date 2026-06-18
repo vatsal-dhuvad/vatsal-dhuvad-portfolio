@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import BrandLogo from "../components/BrandLogo";
 import { showToast } from "../components/Toast";
 import type { PortfolioData } from "../lib/types";
 
@@ -262,7 +263,7 @@ export default function Portfolio() {
       {/* ── NAVBAR ─────────────────────────────────── */}
       <nav className={`nav${scrolled?" scrolled":""}`}>
         <div className="wrap">
-          <button className="nav-logo" onClick={() => goto("home")}>&lt;<em>VD</em>/&gt;</button>
+          <button className="nav-logo" onClick={() => goto("home")} aria-label="Go to home"><BrandLogo /></button>
           <div className={`nav-links${mobileOpen?" open":""}`}>
             {NAV.map(s => (
               <button key={s} className={`nav-link${active===s?" act":""}`} onClick={() => goto(s)}>

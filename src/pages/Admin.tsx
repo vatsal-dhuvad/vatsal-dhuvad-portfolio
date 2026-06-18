@@ -15,6 +15,7 @@ import {
   getMessages, markMessageRead, deleteMessage,
 } from "../lib/data";
 import { auth } from "../lib/auth";
+import BrandLogo from "../components/BrandLogo";
 import type {
   PortfolioData, Skill, Project, Certificate, Education, Experience, Message,
 } from "../lib/types";
@@ -263,7 +264,7 @@ const saveSocial = async () => {
   if (authChecking) return (
     <div className="admin-bg login-wrap">
       <div className="login-box">
-        <div className="login-logo">&lt;<em>VD</em>/&gt;</div>
+        <div className="login-logo"><BrandLogo className="brand-logo-lg" /></div>
         <div className="login-sub">Checking Admin Session</div>
       </div>
     </div>
@@ -272,7 +273,7 @@ const saveSocial = async () => {
   if (!authed) return (
     <div className="admin-bg login-wrap">
       <div className="login-box">
-        <div className="login-logo">&lt;<em>VD</em>/&gt;</div>
+        <div className="login-logo"><BrandLogo className="brand-logo-lg" /></div>
         <div className="login-sub">Portfolio Admin</div>
         <input className="login-input" type="email" placeholder="Admin email" value={adminEmail}
           onChange={(e) => setAdminEmail(e.target.value)} autoComplete="username" />
@@ -304,7 +305,7 @@ const saveSocial = async () => {
   return (
     <div className="admin-bg admin-layout">
       <aside className="sidebar">
-        <div className="sb-logo">&lt;<em>VD</em>/&gt;</div>
+        <div className="sb-logo"><BrandLogo /></div>
         <div className="sb-sub">Admin Panel</div>
         <nav className="sidebar-nav" style={{ display: "flex", flexDirection: "column" }}>
           {nav.map((n) => (
