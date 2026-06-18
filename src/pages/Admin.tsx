@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { FirebaseError } from "firebase/app";
 import {
   EmailAuthProvider,
   onAuthStateChanged,
@@ -76,7 +77,7 @@ export default function Admin() {
   const [adminEmail, setAdminEmail] = useState("vatsaldhuvad23@gmail.com");
   const [pw, setPw] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
-  const [loginErr, setLoginErr] = useState(false);
+  const [loginErr, setLoginErr] = useState("");
   const [panel, setPanel] = useState<Panel>("profile");
   const [data, setLocalData] = useState<PortfolioData>(DEFAULT_DATA);
   const [dataLoading, setDataLoading] = useState(true);
@@ -126,12 +127,25 @@ export default function Admin() {
 
   const login = async () => {
     setLoginLoading(true);
-    setLoginErr(false);
+    setLoginErr("");
     try {
       await signInWithEmailAndPassword(auth, adminEmail.trim(), pw);
       setPw("");
-    } catch {
-      setLoginErr(true);
+    } catch (error) {
+      if (error instanceof FirebaseError) {
+        const messages: Record<string, string> = {
+          "auth/invalid-credential": "Email or password is wrong.",
+          "auth/user-not-found": "No Firebase user found with this email.",
+          "auth/wrong-password": "Password is wrong.",
+          "auth/invalid-email": "Email format is not valid.",
+          "auth/operation-not-allowed": "Enable Email/Password provider in Firebase Authentication.",
+          "auth/unauthorized-domain": "Add this website domain in Firebase Authentication authorized domains.",
+          "auth/too-many-requests": "Too many failed attempts. Wait a few minutes or reset password in Firebase.",
+        };
+        setLoginErr(messages[error.code] || `Firebase login error: ${error.code}`);
+      } else {
+        setLoginErr("Could not sign in. Please try again.");
+      }
     } finally {
       setLoginLoading(false);
     }
@@ -252,7 +266,7 @@ const saveSocial = async () => {
         <input className="login-input" type="password" placeholder="Enter admin password" value={pw}
           onChange={(e) => setPw(e.target.value)} onKeyDown={(e) => e.key === "Enter" && void login()} autoComplete="current-password" />
         <button className="login-btn" disabled={loginLoading} onClick={() => void login()}>{loginLoading ? "Signing in..." : "Sign In"}</button>
-        {loginErr && <p className="login-err">Incorrect password. Try again.</p>}
+        {loginErr && <p className="login-err">{loginErr}</p>}
         <p className="login-hint">Use the Firebase Auth admin account.</p>
       </div>
     </div>
