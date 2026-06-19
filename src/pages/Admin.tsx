@@ -302,6 +302,9 @@ const saveSocial = async () => {
     { key: "password", icon: "🔒", label: "Change Password" },
   ];
 
+  const mobileNav: { key: Panel; icon: string; label: string; badge?: number }[] = [...nav, ...nav2];
+  const activePanelLabel = mobileNav.find((n) => n.key === panel)?.label || "Admin";
+
   return (
     <div className="admin-bg admin-layout">
       <aside className="sidebar">
@@ -325,6 +328,22 @@ const saveSocial = async () => {
       </aside>
 
       <main className="a-main">
+        <div className="admin-mobile-nav">
+          <div className="admin-mobile-title">
+            <BrandLogo />
+            <div>
+              <span>Admin Panel</span>
+              <strong>{activePanelLabel}</strong>
+            </div>
+          </div>
+          <select value={panel} onChange={(e) => setPanel(e.target.value as Panel)} aria-label="Admin section">
+            {mobileNav.map((n) => (
+              <option key={n.key} value={n.key}>
+                {n.label}{n.badge ? ` (${n.badge})` : ""}
+              </option>
+            ))}
+          </select>
+        </div>
         <div style={{ display:"flex", justifyContent:"flex-end", marginBottom: 10 }}>
           <button className="btn-sec" onClick={() => void signOut(auth)}>Sign Out</button>
         </div>
