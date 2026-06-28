@@ -9,12 +9,7 @@
 .hero-grid-bg {
   position: absolute;
   inset: 0;
-  background-image:
-    linear-gradient(rgba(255, 255, 255, .035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, .035) 1px, transparent 1px);
-  background-size: 60px 60px;
-  mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 40%, transparent 100%);
-  -webkit-mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 40%, transparent 100%);
+  display: none;
 }
 
 :root {
@@ -371,13 +366,7 @@ html, body, a, button, input, select, textarea, [role="button"], * {
   overflow: hidden;
   text-align: center;
   background-color: #000000; /* Deep black base */
-  
-  /* Creates a repeating grid pattern across the whole background */
-  background-image: 
-    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
-  background-size: 40px 40px; /* Size of the grid squares */
-  background-position: center center;
+  background-image: none;
   -webkit-mask-image: none;
   mask-image: none;
   
