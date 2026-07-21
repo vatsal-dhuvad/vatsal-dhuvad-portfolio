@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import BrandLogo from "../components/BrandLogo";
 import { showToast } from "../components/Toast";
-import type { PortfolioData } from "../lib/types";
+import type { PortfolioData, SkillProficiency } from "../lib/types";
 
 function GitHubIcon() {
   return (
@@ -37,6 +37,10 @@ function formatWhatsAppNumber(value: string): string {
     return `+91 ${digits.slice(2, 7)} ${digits.slice(7)}`;
   }
   return digits ? `+${digits}` : "";
+}
+
+function proficiencyClassName(proficiency: SkillProficiency): string {
+  return `proficiency-badge proficiency-badge--${proficiency.toLowerCase()}`;
 }
 
 const ICONS: Record<string, string> = {
@@ -151,22 +155,6 @@ export default function Portfolio() {
     document.querySelectorAll(".rv").forEach(el => io.observe(el));
     return () => io.disconnect();
   }, [data, skillFilter, projFilter]);
-
-  // skill bar animation
-  useEffect(() => {
-    if (!data) return;
-    const io = new IntersectionObserver(
-      (entries) => entries.forEach(e => {
-        if (e.isIntersecting)
-          e.target.querySelectorAll<HTMLElement>(".skill-fill")
-            .forEach(b => { b.style.width = (b.dataset.level||"0")+"%"; });
-      }),
-      { threshold: 0.1 }
-    );
-    const el = document.getElementById("skillsGrid");
-    if (el) io.observe(el);
-    return () => io.disconnect();
-  }, [data, skillFilter]);
 
   // typing animation
   useEffect(() => {
@@ -400,10 +388,10 @@ export default function Portfolio() {
               <div key={sk.id} className="skill-card">
                 <div className="skill-row">
                   <span className="skill-name">{sk.name}</span>
-                  <span className="skill-pct">{sk.level}%</span>
-                </div>
-                <div className="skill-track">
-                  <div className="skill-fill" data-level={sk.level} />
+                  <span className={proficiencyClassName(sk.proficiency)}>
+                    <span className="proficiency-dot" />
+                    {sk.proficiency}
+                  </span>
                 </div>
               </div>
             ))}

@@ -18,6 +18,8 @@ import { db } from "./firebase";
 import type {
   Message,
   PortfolioData,
+  Skill,
+  SkillProficiency,
 } from "./types";
 
 export const DEFAULT_DATA: PortfolioData = {
@@ -35,26 +37,26 @@ export const DEFAULT_DATA: PortfolioData = {
     photoBase64: "",
   },
   skills: [
-    { id: "s1", name: "Python", level: 90, category: "Programming" },
-    { id: "s2", name: "SQL", level: 85, category: "Programming" },
-    { id: "s3", name: "Java", level: 65, category: "Programming" },
-    { id: "s4", name: "R", level: 55, category: "Programming" },
-    { id: "s5", name: "Machine Learning", level: 85, category: "ML & AI" },
-    { id: "s6", name: "Deep Learning", level: 75, category: "ML & AI" },
-    { id: "s7", name: "Natural Language Processing", level: 70, category: "ML & AI" },
-    { id: "s8", name: "Computer Vision", level: 65, category: "ML & AI" },
-    { id: "s9", name: "Pandas", level: 90, category: "Data Science" },
-    { id: "s10", name: "NumPy", level: 88, category: "Data Science" },
-    { id: "s11", name: "Scikit-learn", level: 85, category: "Data Science" },
-    { id: "s12", name: "TensorFlow", level: 72, category: "Data Science" },
-    { id: "s13", name: "PyTorch", level: 68, category: "Data Science" },
-    { id: "s14", name: "Matplotlib / Seaborn", level: 82, category: "Data Science" },
-    { id: "s15", name: "Power BI", level: 70, category: "Tools" },
-    { id: "s16", name: "Tableau", level: 65, category: "Tools" },
-    { id: "s17", name: "Git & GitHub", level: 80, category: "Tools" },
-    { id: "s18", name: "MySQL", level: 78, category: "Tools" },
-    { id: "s19", name: "MongoDB", level: 60, category: "Tools" },
-    { id: "s20", name: "Statistics", level: 80, category: "Data Science" },
+    { id: "s1", name: "Python", proficiency: "Advanced", category: "Programming" },
+    { id: "s2", name: "SQL", proficiency: "Advanced", category: "Programming" },
+    { id: "s3", name: "Java", proficiency: "Intermediate", category: "Programming" },
+    { id: "s4", name: "R", proficiency: "Learning", category: "Programming" },
+    { id: "s5", name: "Machine Learning", proficiency: "Advanced", category: "ML & AI" },
+    { id: "s6", name: "Deep Learning", proficiency: "Intermediate", category: "ML & AI" },
+    { id: "s7", name: "Natural Language Processing", proficiency: "Intermediate", category: "ML & AI" },
+    { id: "s8", name: "Computer Vision", proficiency: "Intermediate", category: "ML & AI" },
+    { id: "s9", name: "Pandas", proficiency: "Advanced", category: "Data Science" },
+    { id: "s10", name: "NumPy", proficiency: "Advanced", category: "Data Science" },
+    { id: "s11", name: "Scikit-learn", proficiency: "Advanced", category: "Data Science" },
+    { id: "s12", name: "TensorFlow", proficiency: "Intermediate", category: "Data Science" },
+    { id: "s13", name: "PyTorch", proficiency: "Intermediate", category: "Data Science" },
+    { id: "s14", name: "Matplotlib / Seaborn", proficiency: "Advanced", category: "Data Science" },
+    { id: "s15", name: "Power BI", proficiency: "Intermediate", category: "Tools" },
+    { id: "s16", name: "Tableau", proficiency: "Intermediate", category: "Tools" },
+    { id: "s17", name: "Git & GitHub", proficiency: "Advanced", category: "Tools" },
+    { id: "s18", name: "MySQL", proficiency: "Intermediate", category: "Tools" },
+    { id: "s19", name: "MongoDB", proficiency: "Intermediate", category: "Tools" },
+    { id: "s20", name: "Statistics", proficiency: "Advanced", category: "Data Science" },
   ],
   projects: [
     {
@@ -174,17 +176,48 @@ function heroBioFromBio(bio: string): string {
   return `${trimmed.slice(0, 170).trim()}...`;
 }
 
+function levelToProficiency(level: unknown): SkillProficiency {
+  if (typeof level !== "number" || !Number.isFinite(level)) return "Intermediate";
+  if (level >= 80) return "Advanced";
+  if (level >= 60) return "Intermediate";
+  return "Learning";
+}
+
+function isSkillProficiency(value: unknown): value is SkillProficiency {
+  return value === "Advanced" || value === "Intermediate" || value === "Learning";
+}
+
+type StoredSkill = Partial<Skill> & { level?: unknown };
+
+function normalizeSkills(rawSkills: unknown): Skill[] {
+  if (!Array.isArray(rawSkills)) return cloneDefaultData().skills;
+
+  return rawSkills.map((skill, index) => {
+    const stored = (skill && typeof skill === "object" ? skill : {}) as StoredSkill;
+    return {
+      id: typeof stored.id === "string" && stored.id ? stored.id : `s${index + 1}`,
+      name: typeof stored.name === "string" ? stored.name : "",
+      category: typeof stored.category === "string" && stored.category ? stored.category : "Other",
+      proficiency: isSkillProficiency(stored.proficiency)
+        ? stored.proficiency
+        : levelToProficiency(stored.level),
+    };
+  });
+}
+
 function normalizePortfolioData(raw: Partial<PortfolioData>): PortfolioData {
   const profile = { ...DEFAULT_DATA.profile, ...(raw.profile ?? {}) };
   if (!profile.heroBio?.trim()) profile.heroBio = heroBioFromBio(profile.bio || DEFAULT_DATA.profile.bio);
 
   const socialLinks = { ...DEFAULT_DATA.socialLinks, ...(raw.socialLinks ?? {}) };
   if (!socialLinks.whatsapp?.trim()) socialLinks.whatsapp = DEFAULT_DATA.socialLinks.whatsapp;
+  const skills = normalizeSkills(raw.skills);
 
   return {
     ...cloneDefaultData(),
     ...raw,
     profile,
+    skills,
     socialLinks,
     messages: Array.isArray(raw.messages) ? raw.messages : [],
   };

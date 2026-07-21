@@ -862,7 +862,7 @@ html, body, a, button, input, select, textarea, [role="button"], * {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;
+  gap: 14px;
 }
 
 .skill-name {
@@ -870,26 +870,49 @@ html, body, a, button, input, select, textarea, [role="button"], * {
   font-weight: 600;
 }
 
-.skill-pct {
-  font-size: .82rem;
-  font-weight: 700;
-  color: var(--cyan);
+.proficiency-badge {
+  --proficiency-color: var(--cyan);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  flex-shrink: 0;
+  color: var(--proficiency-color);
+  font-size: .78rem;
+  font-weight: 800;
   font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0;
 }
 
-.skill-track {
-  height: 5px;
-  background: rgba(255, 255, 255, .06);
-  border-radius: 3px;
-  overflow: hidden;
+.proficiency-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--proficiency-color);
+  box-shadow: 0 0 10px var(--proficiency-color), 0 0 18px color-mix(in srgb, var(--proficiency-color) 45%, transparent);
+  animation: proficiencyPulse 2.8s cubic-bezier(.45, 0, .25, 1) infinite;
 }
 
-.skill-fill {
-  height: 100%;
-  background: var(--grad);
-  border-radius: 3px;
-  width: 0;
-  transition: width 1.4s cubic-bezier(.25, .46, .45, .94);
+.proficiency-badge--advanced {
+  --proficiency-color: #10B981;
+}
+
+.proficiency-badge--intermediate {
+  --proficiency-color: #3B82F6;
+}
+
+.proficiency-badge--learning {
+  --proficiency-color: #A855F7;
+}
+
+@keyframes proficiencyPulse {
+  0%, 100% {
+    opacity: .62;
+    transform: scale(.9);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
 }
 
 /* ─── PROJECTS ────────────────────── */
@@ -2043,23 +2066,6 @@ textarea.c-input {
 
 .a-table tr:hover td {
   background: rgba(255, 255, 255, .01);
-}
-
-.lvl-bar {
-  width: 100px;
-  height: 5px;
-  background: rgba(255, 255, 255, .06);
-  border-radius: 3px;
-  overflow: hidden;
-  display: inline-block;
-  vertical-align: middle;
-  margin-right: 8px;
-}
-
-.lvl-fill {
-  height: 100%;
-  background: var(--grad);
-  border-radius: 3px;
 }
 
 .cat-badge {

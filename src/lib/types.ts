@@ -12,10 +12,14 @@ export interface Profile {
   photoBase64: string;
 }
 
+export const SKILL_PROFICIENCIES = ["Advanced", "Intermediate", "Learning"] as const;
+
+export type SkillProficiency = (typeof SKILL_PROFICIENCIES)[number];
+
 export interface Skill {
   id: string;
   name: string;
-  level: number;
+  proficiency: SkillProficiency;
   category: string;
 }
 

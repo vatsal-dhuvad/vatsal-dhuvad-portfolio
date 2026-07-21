@@ -16,8 +16,16 @@ import {
 } from "../lib/data";
 import { auth } from "../lib/auth";
 import BrandLogo from "../components/BrandLogo";
-import type {
-  PortfolioData, Skill, Project, Certificate, Education, Experience, Message,
+import {
+  SKILL_PROFICIENCIES,
+  type Certificate,
+  type Education,
+  type Experience,
+  type Message,
+  type PortfolioData,
+  type Project,
+  type Skill,
+  type SkillProficiency,
 } from "../lib/types";
 import { showToast } from "../components/Toast";
 
@@ -31,6 +39,10 @@ type ModalMode =
   | null;
 
 const MAX_FIRESTORE_IMAGE_BYTES = 700 * 1024;
+
+function proficiencyClassName(proficiency: SkillProficiency): string {
+  return `proficiency-badge proficiency-badge--${proficiency.toLowerCase()}`;
+}
 
 function firebaseErrorMessage(error: unknown, fallback: string): string {
   if (!(error instanceof FirebaseError)) return fallback;
@@ -384,14 +396,16 @@ const saveSocial = async () => {
             <div className="a-head"><h1>📊 Skills</h1><button className="btn-add" onClick={() => setModal({ type: "skill" })}>+ Add Skill</button></div>
             <div className="a-card" style={{ overflowX: "auto" }}>
               <table className="a-table">
-                <thead><tr><th>Skill</th><th>Level</th><th>Category</th><th>Actions</th></tr></thead>
+                <thead><tr><th>Skill</th><th>Proficiency</th><th>Category</th><th>Actions</th></tr></thead>
                 <tbody>
                   {data.skills.map((s) => (
                     <tr key={s.id}>
                       <td style={{ fontWeight: 600 }}>{s.name}</td>
                       <td>
-                        <span className="lvl-bar"><span className="lvl-fill" style={{ width: s.level + "%" }} /></span>
-                        <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: ".8rem", color: "var(--cyan)" }}>{s.level}%</span>
+                        <span className={proficiencyClassName(s.proficiency)}>
+                          <span className="proficiency-dot" />
+                          {s.proficiency}
+                        </span>
                       </td>
                       <td><span className="cat-badge">{s.category}</span></td>
                       <td style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -624,15 +638,22 @@ function ModalWrap({ modal, onClose, onSave }: { modal: NonNullable<ModalMode>; 
 }
 
 function SkillForm({ item, onSave }: { item?: Skill; onSave: (v: Partial<Skill>) => void }) {
-  const [f, setF] = useState<Partial<Skill>>(item || { name: "", level: 70, category: "Programming" });
+  const [f, setF] = useState<Partial<Skill>>(item || { name: "", proficiency: "Intermediate", category: "Programming" });
   const skillCategories = ["AI", "ML", "Data Science", "Database", "Other"];
   const isCustomCategory = Boolean(f.category && !skillCategories.includes(f.category));
   const [categoryMode, setCategoryMode] = useState(isCustomCategory ? "Other" : f.category || "Programming");
+  const proficiency = f.proficiency ?? "Intermediate";
   return (
     <>
       <h2>{item ? "Edit" : "Add"} Skill</h2>
       <div className="f-row"><label>Skill Name</label><input value={f.name || ""} onChange={(e) => setF({ ...f, name: e.target.value })} /></div>
-      <div className="f-row"><label>Level: {f.level}%</label><input type="range" min={0} max={100} value={f.level ?? 70} onChange={(e) => setF({ ...f, level: +e.target.value })} /></div>
+      <div className="f-row"><label>Proficiency</label>
+        <select value={proficiency} onChange={(e) => setF({ ...f, proficiency: e.target.value as SkillProficiency })}>
+          {SKILL_PROFICIENCIES.map((option) => (
+            <option key={option} value={option}>{option}</option>
+          ))}
+        </select>
+      </div>
       <div className="f-row"><label>Category</label>
         <select value={categoryMode} onChange={(e) => {
           setCategoryMode(e.target.value);
@@ -644,7 +665,7 @@ function SkillForm({ item, onSave }: { item?: Skill; onSave: (v: Partial<Skill>)
       {categoryMode === "Other" && (
         <div className="f-row"><label>Custom Category</label><input value={f.category || ""} onChange={(e) => setF({ ...f, category: e.target.value })} placeholder="Write your category" /></div>
       )}
-      <div className="f-actions"><button className="btn-add" onClick={() => onSave(f)}>Save</button></div>
+      <div className="f-actions"><button className="btn-add" onClick={() => onSave({ ...f, proficiency })}>Save</button></div>
     </>
   );
 }
