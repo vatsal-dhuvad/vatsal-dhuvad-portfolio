@@ -23,6 +23,7 @@
     }
   ],
   "rewrites": [
-    { "source": "/((?!.*\\.).*)", "destination": "/index.html" }
+    { "source": "/projects/:path*", "destination": "/projects/:path*" },
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
