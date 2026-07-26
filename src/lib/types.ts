@@ -42,6 +42,7 @@ export interface Certificate {
   name: string;
   org: string;
   date: string;
+  certificateUrl?: string;
   link: string;
   image: string;
 }

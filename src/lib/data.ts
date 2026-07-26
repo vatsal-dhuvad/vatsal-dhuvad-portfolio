@@ -16,6 +16,7 @@ import {
 import { db } from "./firebase";
 
 import type {
+  Certificate,
   Message,
   PortfolioData,
   Skill,
@@ -111,16 +112,16 @@ export const DEFAULT_DATA: PortfolioData = {
     },
   ],
   certificates: [
-    { id: "c1", name: "Machine Learning Specialization", org: "Coursera — Stanford / Andrew Ng", date: "2025-06", link: "", image: "" },
-    { id: "c2", name: "Deep Learning Specialization", org: "Coursera — deeplearning.ai", date: "2025-04", link: "", image: "" },
-    { id: "c3", name: "Python for Data Science", org: "IBM — Coursera", date: "2025-02", link: "", image: "" },
-    { id: "c4", name: "SQL for Data Science", org: "UC Davis — Coursera", date: "2025-01", link: "", image: "" },
-    { id: "c5", name: "Data Visualization with Tableau", org: "Coursera", date: "2024-11", link: "", image: "" },
-    { id: "c6", name: "AWS Cloud Practitioner", org: "Amazon Web Services", date: "2025-03", link: "", image: "" },
-    { id: "c7", name: "TensorFlow Developer Certificate", org: "Google", date: "2025-05", link: "", image: "" },
-    { id: "c8", name: "Power BI Data Analyst", org: "Microsoft", date: "2024-12", link: "", image: "" },
-    { id: "c9", name: "Statistics for Data Science", org: "Great Learning", date: "2024-10", link: "", image: "" },
-    { id: "c10", name: "Git & GitHub Masterclass", org: "Udemy", date: "2024-09", link: "", image: "" },
+    { id: "c1", name: "Machine Learning Specialization", org: "Coursera — Stanford / Andrew Ng", date: "2025-06", certificateUrl: "", link: "", image: "" },
+    { id: "c2", name: "Deep Learning Specialization", org: "Coursera — deeplearning.ai", date: "2025-04", certificateUrl: "", link: "", image: "" },
+    { id: "c3", name: "Python for Data Science", org: "IBM — Coursera", date: "2025-02", certificateUrl: "", link: "", image: "" },
+    { id: "c4", name: "SQL for Data Science", org: "UC Davis — Coursera", date: "2025-01", certificateUrl: "", link: "", image: "" },
+    { id: "c5", name: "Data Visualization with Tableau", org: "Coursera", date: "2024-11", certificateUrl: "", link: "", image: "" },
+    { id: "c6", name: "AWS Cloud Practitioner", org: "Amazon Web Services", date: "2025-03", certificateUrl: "", link: "", image: "" },
+    { id: "c7", name: "TensorFlow Developer Certificate", org: "Google", date: "2025-05", certificateUrl: "", link: "", image: "" },
+    { id: "c8", name: "Power BI Data Analyst", org: "Microsoft", date: "2024-12", certificateUrl: "", link: "", image: "" },
+    { id: "c9", name: "Statistics for Data Science", org: "Great Learning", date: "2024-10", certificateUrl: "", link: "", image: "" },
+    { id: "c10", name: "Git & GitHub Masterclass", org: "Udemy", date: "2024-09", certificateUrl: "", link: "", image: "" },
   ],
   education: [
     {
@@ -188,6 +189,7 @@ function isSkillProficiency(value: unknown): value is SkillProficiency {
 }
 
 type StoredSkill = Partial<Skill> & { level?: unknown };
+type StoredCertificate = Partial<Certificate>;
 
 function normalizeSkills(rawSkills: unknown): Skill[] {
   if (!Array.isArray(rawSkills)) return cloneDefaultData().skills;
@@ -205,6 +207,27 @@ function normalizeSkills(rawSkills: unknown): Skill[] {
   });
 }
 
+function normalizeCertificates(rawCertificates: unknown): Certificate[] {
+  if (!Array.isArray(rawCertificates)) return cloneDefaultData().certificates;
+
+  return rawCertificates.map((certificate, index) => {
+    const stored = (certificate && typeof certificate === "object" ? certificate : {}) as StoredCertificate;
+    const link = typeof stored.link === "string" ? stored.link : "";
+    const image = typeof stored.image === "string" ? stored.image : "";
+    const certificateUrl = typeof stored.certificateUrl === "string" ? stored.certificateUrl : "";
+
+    return {
+      id: typeof stored.id === "string" && stored.id ? stored.id : `c${index + 1}`,
+      name: typeof stored.name === "string" ? stored.name : "",
+      org: typeof stored.org === "string" ? stored.org : "",
+      date: typeof stored.date === "string" ? stored.date : "",
+      certificateUrl: certificateUrl || link || image,
+      link,
+      image,
+    };
+  });
+}
+
 function normalizePortfolioData(raw: Partial<PortfolioData>): PortfolioData {
   const profile = { ...DEFAULT_DATA.profile, ...(raw.profile ?? {}) };
   if (!profile.heroBio?.trim()) profile.heroBio = heroBioFromBio(profile.bio || DEFAULT_DATA.profile.bio);
@@ -212,12 +235,14 @@ function normalizePortfolioData(raw: Partial<PortfolioData>): PortfolioData {
   const socialLinks = { ...DEFAULT_DATA.socialLinks, ...(raw.socialLinks ?? {}) };
   if (!socialLinks.whatsapp?.trim()) socialLinks.whatsapp = DEFAULT_DATA.socialLinks.whatsapp;
   const skills = normalizeSkills(raw.skills);
+  const certificates = normalizeCertificates(raw.certificates);
 
   return {
     ...cloneDefaultData(),
     ...raw,
     profile,
     skills,
+    certificates,
     socialLinks,
     messages: Array.isArray(raw.messages) ? raw.messages : [],
   };

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Eye } from "lucide-react";
 import BrandLogo from "../components/BrandLogo";
 import { showToast } from "../components/Toast";
 import type { PortfolioData, SkillProficiency } from "../lib/types";
@@ -41,6 +42,10 @@ function formatWhatsAppNumber(value: string): string {
 
 function proficiencyClassName(proficiency: SkillProficiency): string {
   return `proficiency-badge proficiency-badge--${proficiency.toLowerCase()}`;
+}
+
+function getCertificateUrl(certificate: { certificateUrl?: string; link?: string; image?: string }): string {
+  return certificate.certificateUrl || certificate.link || certificate.image || "";
 }
 
 const ICONS: Record<string, string> = {
@@ -471,14 +476,22 @@ export default function Portfolio() {
           <div className="certs-grid rv">
             {shownCerts.map((c,i) => (
               <div key={c.id} className="cert-card">
+                {getCertificateUrl(c) && (
+                  <a
+                    href={getCertificateUrl(c)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="cert-eye-btn"
+                    aria-label={`View certificate: ${c.name}`}
+                    title="View certificate"
+                  >
+                    <Eye size={17} strokeWidth={2.2} />
+                  </a>
+                )}
                 <div className="cert-ico">{CERT_ICOS[i%CERT_ICOS.length]}</div>
                 <h3>{c.name}</h3>
                 <p className="cert-org">{c.org}</p>
                 <p className="cert-date">{c.date}</p>
-                <div className="cert-actions">
-                  {c.link  && <a href={c.link}  target="_blank" rel="noopener noreferrer" className="cert-btn">Verify ↗</a>}
-                  {c.image && <a href={c.image} target="_blank" rel="noopener noreferrer" className="cert-btn">View</a>}
-                </div>
               </div>
             ))}
             {shownCerts.length === 0 && (

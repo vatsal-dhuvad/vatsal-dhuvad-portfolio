@@ -451,6 +451,11 @@ const saveSocial = async () => {
                   <h3>{c.name}</h3>
                   <p className="meta">{c.org}</p>
                   <p style={{ color: "var(--text-3)", fontSize: ".78rem", marginBottom: 16 }}>{c.date}</p>
+                  {(c.certificateUrl || c.link || c.image) && (
+                    <p style={{ color: "var(--cyan)", fontSize: ".76rem", fontWeight: 700, marginBottom: 12 }}>
+                      URL added
+                    </p>
+                  )}
                   <div className="a-item-footer">
                     <button className="btn-edit" onClick={() => setModal({ type: "certificate", item: c })}>Edit</button>
                     <button className="btn-del" onClick={() => void removeItem("certificates", c.id)}>Delete</button>
@@ -778,16 +783,28 @@ function ProjForm({ item, onSave }: { item?: Project; onSave: (v: Partial<Projec
 }
 
 function CertForm({ item, onSave }: { item?: Certificate; onSave: (v: Partial<Certificate>) => void }) {
-  const [f, setF] = useState<Partial<Certificate>>(item || { name: "", org: "", date: "", link: "", image: "" });
+  const [f, setF] = useState<Partial<Certificate>>(
+    item
+      ? { ...item, certificateUrl: item.certificateUrl || item.link || item.image || "" }
+      : { name: "", org: "", date: "", certificateUrl: "", link: "", image: "" }
+  );
+  const certificateUrl = f.certificateUrl || "";
   return (
     <>
       <h2>{item ? "Edit" : "Add"} Certificate</h2>
       <div className="f-row"><label>Certificate Name</label><input value={f.name || ""} onChange={(e) => setF({ ...f, name: e.target.value })} /></div>
       <div className="f-row"><label>Issuing Organization</label><input value={f.org || ""} onChange={(e) => setF({ ...f, org: e.target.value })} /></div>
       <div className="f-row"><label>Date (YYYY-MM)</label><input value={f.date || ""} onChange={(e) => setF({ ...f, date: e.target.value })} placeholder="2025-06" /></div>
-      <div className="f-row"><label>Verify Link (optional)</label><input type="url" value={f.link || ""} onChange={(e) => setF({ ...f, link: e.target.value })} /></div>
-      <div className="f-row"><label>Certificate Image URL (optional)</label><input value={f.image || ""} onChange={(e) => setF({ ...f, image: e.target.value })} /></div>
-      <div className="f-actions"><button className="btn-add" onClick={() => onSave(f)}>Save</button></div>
+      <div className="f-row">
+        <label>Certificate / Badge URL (optional)</label>
+        <input
+          type="url"
+          value={certificateUrl}
+          onChange={(e) => setF({ ...f, certificateUrl: e.target.value })}
+          placeholder="https://..."
+        />
+      </div>
+      <div className="f-actions"><button className="btn-add" onClick={() => onSave({ ...f, certificateUrl, link: "", image: "" })}>Save</button></div>
     </>
   );
 }
