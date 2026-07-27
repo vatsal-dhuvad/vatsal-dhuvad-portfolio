@@ -2740,3 +2740,33 @@ a[title="LinkedIn"]:hover svg {
 a[title="WhatsApp"]:hover svg {
   color: #25D366 !important;
 }
+/* Smooth cursor. Keep this block last so native cursor rules cannot override it on desktop. */
+.smooth-cursor {
+  position: fixed;
+  z-index: 2147483647;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.smooth-cursor svg {
+  width: 50px;
+  height: 54px;
+  display: block;
+  scale: .5;
+  transform-origin: center;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  html.smooth-cursor-enabled,
+  html.smooth-cursor-enabled *,
+  html.smooth-cursor-enabled *::before,
+  html.smooth-cursor-enabled *::after {
+    cursor: none !important;
+  }
+}
+
+@media (hover: none), (pointer: coarse) {
+  .smooth-cursor {
+    display: none !important;
+  }
+}
