@@ -2,9 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ─── CUSTOM CURSOR ───────────────── */
-/* Removed cursor: none to allow default mouse pointer */
-
 /* ─── HERO GRID ───────────────────── */
 .hero-grid-bg {
   position: absolute;
@@ -345,40 +342,18 @@ select {
   display: block;
 }
 
-/* Desktop-only 360-degree custom cursor. Mobile and touch devices keep the system cursor. */
-.custom-cursor {
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 999999;
-  width: 24px;
-  height: 24px;
-  overflow: visible;
-  pointer-events: none;
-  opacity: 0;
-  transform: translate3d(-100px, -100px, 0);
-  transform-origin: 20.3px 12px;
-  backface-visibility: hidden;
-  contain: layout style paint;
-  transition: opacity .08s linear;
-  will-change: transform;
-}
-
+/* Desktop-only native custom cursor. Browser-rendered cursor avoids lag and double-pointer trails. */
 @media (hover: hover) and (pointer: fine) {
-  html.custom-cursor-enabled,
-  html.custom-cursor-enabled *,
-  html.custom-cursor-enabled input,
-  html.custom-cursor-enabled textarea,
-  html.custom-cursor-enabled select,
-  html.custom-cursor-enabled button,
-  html.custom-cursor-enabled a {
-    cursor: none !important;
-  }
-}
-
-@media (hover: none), (pointer: coarse) {
-  .custom-cursor {
-    display: none !important;
+  html,
+  body,
+  body *,
+  button,
+  a,
+  input,
+  textarea,
+  select,
+  [role="button"] {
+    cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'%3E%3Cpath d='M5 3L22 14L14 16L10 24Z' fill='%23050505' stroke='%23ffffff' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/svg%3E") 5 3, auto !important;
   }
 }
 /* ─── HERO ────────────────────────── */
