@@ -2740,3 +2740,41 @@ a[title="LinkedIn"]:hover svg {
 a[title="WhatsApp"]:hover svg {
   color: #25D366 !important;
 }
+/* Direction cursor. Keep this block last so native cursors cannot override it on desktop. */
+.direction-cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 2147483647;
+  display: none;
+  width: 27px;
+  height: 32px;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+  opacity: 0;
+  transform: translate3d(-120px, -120px, 0);
+  transform-origin: 0 0;
+  backface-visibility: hidden;
+  contain: strict;
+  will-change: transform;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .direction-cursor {
+    display: block;
+  }
+
+  html.direction-cursor-enabled,
+  html.direction-cursor-enabled *,
+  html.direction-cursor-enabled *::before,
+  html.direction-cursor-enabled *::after {
+    cursor: none !important;
+  }
+}
+
+@media (hover: none), (pointer: coarse) {
+  .direction-cursor {
+    display: none !important;
+  }
+}
