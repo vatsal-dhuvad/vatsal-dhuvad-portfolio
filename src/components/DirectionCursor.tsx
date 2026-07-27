@@ -58,15 +58,12 @@ export default function DirectionCursor() {
         removeListeners = () => {};
         return;
       }
-
-      window.addEventListener("pointerrawupdate", onMove, { passive: true });
       window.addEventListener("pointermove", onMove, { passive: true });
       window.addEventListener("mousemove", onMove, { passive: true });
       window.addEventListener("blur", hideCursor);
       document.addEventListener("mouseleave", hideCursor);
 
       removeListeners = () => {
-        window.removeEventListener("pointerrawupdate", onMove);
         window.removeEventListener("pointermove", onMove);
         window.removeEventListener("mousemove", onMove);
         window.removeEventListener("blur", hideCursor);
