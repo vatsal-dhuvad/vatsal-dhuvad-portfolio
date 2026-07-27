@@ -1221,12 +1221,23 @@ html, body, a, button, input, select, textarea, [role="button"], * {
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  color: var(--cyan);
-  background: rgba(0, 229, 255, .08);
-  border: 1px solid rgba(0, 229, 255, .18);
+  color: #fff;
+  background: rgba(0, 229, 255, .14);
+  border: 1px solid rgba(0, 229, 255, .35);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 0 18px rgba(0, 229, 255, .18);
   transition: color .25s, background .25s, border-color .25s, transform .25s, box-shadow .25s;
+}
+
+.cert-eye-btn svg {
+  width: 18px;
+  height: 18px;
+  display: block;
+  color: currentColor;
+  stroke: currentColor;
+  opacity: 1;
+  filter: drop-shadow(0 0 5px rgba(255, 255, 255, .35));
 }
 
 .cert-eye-btn:hover {
@@ -2463,6 +2474,21 @@ textarea.c-input {
 }
 
 @media (max-width: 768px) {
+  .cert-eye-btn {
+    top: 14px;
+    right: 14px;
+    width: 40px;
+    height: 40px;
+    background: rgba(0, 229, 255, .2);
+    border-color: rgba(0, 229, 255, .48);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, .08), 0 0 22px rgba(0, 229, 255, .22);
+  }
+
+  .cert-eye-btn svg {
+    width: 20px;
+    height: 20px;
+  }
+
   .wrap {
     padding: 0 20px;
   }
