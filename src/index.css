@@ -351,13 +351,16 @@ select {
   top: 0;
   left: 0;
   z-index: 999999;
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   overflow: visible;
   pointer-events: none;
   opacity: 0;
   transform: translate3d(-100px, -100px, 0);
-  transform-origin: 0 0;
+  transform-origin: 20.3px 12px;
+  backface-visibility: hidden;
+  contain: layout style paint;
+  transition: opacity .08s linear;
   will-change: transform;
 }
 

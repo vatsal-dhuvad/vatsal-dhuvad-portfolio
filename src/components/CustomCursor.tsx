@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 
 const DESKTOP_POINTER_QUERY = "(hover: hover) and (pointer: fine)";
+const TIP_OFFSET_X = 20.3;
+const TIP_OFFSET_Y = 12;
 
 export default function CustomCursor() {
   const ref = useRef<SVGSVGElement>(null);
@@ -10,21 +12,14 @@ export default function CustomCursor() {
     const media = window.matchMedia(DESKTOP_POINTER_QUERY);
     let lastX = 0;
     let lastY = 0;
-    let x = 0;
-    let y = 0;
     let angle = 0;
     let hasLastPoint = false;
-    let frame = 0;
 
-    const render = () => {
-      frame = 0;
-      if (!ref.current) return;
-      ref.current.style.opacity = "1";
-      ref.current.style.transform = `translate3d(${x}px, ${y}px, 0) rotate(${angle}deg)`;
-    };
-
-    const scheduleRender = () => {
-      if (!frame) frame = requestAnimationFrame(render);
+    const moveCursor = (nextX: number, nextY: number) => {
+      const cursor = ref.current;
+      if (!cursor) return;
+      cursor.style.opacity = "1";
+      cursor.style.transform = `translate3d(${nextX - TIP_OFFSET_X}px, ${nextY - TIP_OFFSET_Y}px, 0) rotate(${angle}deg)`;
     };
 
     const syncEnabled = () => {
@@ -36,21 +31,21 @@ export default function CustomCursor() {
     const onPointerMove = (event: PointerEvent) => {
       if (!media.matches || event.pointerType === "touch") return;
 
-      x = event.clientX;
-      y = event.clientY;
+      const nextX = event.clientX;
+      const nextY = event.clientY;
 
       if (hasLastPoint) {
-        const dx = x - lastX;
-        const dy = y - lastY;
-        if (Math.hypot(dx, dy) > 0.3) {
+        const dx = nextX - lastX;
+        const dy = nextY - lastY;
+        if (Math.hypot(dx, dy) > 0.2) {
           angle = Math.atan2(dy, dx) * (180 / Math.PI);
         }
       }
 
-      lastX = x;
-      lastY = y;
+      lastX = nextX;
+      lastY = nextY;
       hasLastPoint = true;
-      scheduleRender();
+      moveCursor(nextX, nextY);
     };
 
     const onPointerLeave = () => {
@@ -63,7 +58,6 @@ export default function CustomCursor() {
     document.addEventListener("mouseleave", onPointerLeave);
 
     return () => {
-      if (frame) cancelAnimationFrame(frame);
       document.documentElement.classList.remove("custom-cursor-enabled");
       media.removeEventListener("change", syncEnabled);
       window.removeEventListener("pointermove", onPointerMove);
@@ -77,14 +71,14 @@ export default function CustomCursor() {
     <svg
       ref={ref}
       className="custom-cursor"
-      width="20"
-      height="20"
-      viewBox="-20 -11 24 22"
+      width="24"
+      height="24"
+      viewBox="-22 -12 26 24"
       aria-hidden="true"
       focusable="false"
     >
       <path
-        d="M0 0 -16 -7 -11.5 0 -16 7Z"
+        d="M0 0 -18 -8 -13 0 -18 8Z"
         fill="#050505"
         stroke="#fff"
         strokeWidth="2"
