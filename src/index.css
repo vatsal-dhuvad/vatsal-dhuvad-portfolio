@@ -342,33 +342,6 @@ select {
   display: block;
 }
 
-/* Desktop-only rotating custom cursor. Hidden on touch devices. */
-.motion-cursor {
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 999999;
-  display: none;
-  width: 30px;
-  height: 30px;
-  overflow: visible;
-  pointer-events: none;
-  visibility: hidden;
-  transform: translate3d(-120px, -120px, 0);
-  transform-origin: 25px 16px;
-  backface-visibility: hidden;
-  contain: strict;
-  will-change: transform;
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .motion-cursor {
-    display: block;
-  }
-
-
-}
-
 /* ─── HERO ────────────────────────── */
 .hero {
   min-height: 100vh;
@@ -2766,13 +2739,4 @@ a[title="LinkedIn"]:hover svg {
 
 a[title="WhatsApp"]:hover svg {
   color: #25D366 !important;
-}
-/* Final desktop cursor override. Keep this at the end so later component rules cannot show a second native cursor. */
-@media (hover: hover) and (pointer: fine) {
-  html.motion-cursor-enabled,
-  html.motion-cursor-enabled *,
-  html.motion-cursor-enabled *::before,
-  html.motion-cursor-enabled *::after {
-    cursor: none !important;
-  }
 }
