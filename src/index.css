@@ -345,17 +345,30 @@ select {
   display: block;
 }
 
-/* ─── CUSTOM CURSOR LAYOUT ────────────────── */
-html, body, a, button, input, select, textarea, [role="button"], * {
-  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://w3.org' width='28' height='28' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 2L2 22l10-5 10 5L12 2z'/%3E%3C/svg%3E") 12 2, auto !important;
-}
+/* Desktop-only custom cursor. Uses the native pointer path, so movement stays free and instant. */
+@media (hover: hover) and (pointer: fine) {
+  :root {
+    --portfolio-cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cpath d='M7 3.5 25.8 17.4c1.4 1 .8 3.2-.9 3.4l-8.1 1-4.4 6.8c-.9 1.4-3 .8-3.1-.9L7 3.5Z' fill='%23000000' stroke='%23ffffff' stroke-width='2.3' stroke-linejoin='round'/%3E%3C/svg%3E") 7 4;
+  }
 
-@media (prefers-color-scheme: light) {
-  html, body, a, button, * {
-    cursor: url("data:image/svg+xml,%3Csvg xmlns='http://w3.org' width='28' height='28' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 2L2 22l10-5 10 5L12 2z'/%3E%3C/svg%3E") 12 2, auto !important;
+  html,
+  body,
+  body * {
+    cursor: var(--portfolio-cursor), auto !important;
+  }
+
+  a,
+  button,
+  select,
+  [role="button"] {
+    cursor: var(--portfolio-cursor), pointer !important;
+  }
+
+  input,
+  textarea {
+    cursor: text !important;
   }
 }
-
 /* ─── HERO ────────────────────────── */
 .hero {
   min-height: 100vh;
