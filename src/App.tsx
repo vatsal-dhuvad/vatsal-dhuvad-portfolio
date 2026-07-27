@@ -2,6 +2,7 @@ import { lazy, Suspense } from "react";
 import { Switch, Route, Router as WouterRouter } from "wouter";
 import Portfolio from "@/pages/Portfolio";
 import { ToastContainer } from "@/components/Toast";
+import MotionCursor from "@/components/MotionCursor";
 
 const Admin = lazy(() => import("@/pages/Admin"));
 
@@ -32,6 +33,7 @@ function Router() {
 function App() {
   return (
     <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+      <MotionCursor />
       <Router />
       <ToastContainer />
     </WouterRouter>

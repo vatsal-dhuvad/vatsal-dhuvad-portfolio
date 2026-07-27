@@ -342,20 +342,36 @@ select {
   display: block;
 }
 
-/* Desktop-only native custom cursor. Browser-rendered cursor avoids lag and double-pointer trails. */
+/* Desktop-only rotating custom cursor. Hidden on touch devices. */
+.motion-cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 999999;
+  display: none;
+  width: 30px;
+  height: 30px;
+  overflow: visible;
+  pointer-events: none;
+  visibility: hidden;
+  transform: translate3d(-120px, -120px, 0);
+  transform-origin: 25px 16px;
+  backface-visibility: hidden;
+  contain: strict;
+  will-change: transform;
+}
+
 @media (hover: hover) and (pointer: fine) {
-  html,
-  body,
-  body *,
-  button,
-  a,
-  input,
-  textarea,
-  select,
-  [role="button"] {
-    cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'%3E%3Cpath d='M5 3L22 14L14 16L10 24Z' fill='%23050505' stroke='%23ffffff' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/svg%3E") 5 3, auto !important;
+  .motion-cursor {
+    display: block;
+  }
+
+  html.motion-cursor-enabled,
+  html.motion-cursor-enabled * {
+    cursor: none !important;
   }
 }
+
 /* ─── HERO ────────────────────────── */
 .hero {
   min-height: 100vh;
