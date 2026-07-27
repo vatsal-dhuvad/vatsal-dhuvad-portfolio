@@ -366,10 +366,7 @@ select {
     display: block;
   }
 
-  html.motion-cursor-enabled,
-  html.motion-cursor-enabled * {
-    cursor: none !important;
-  }
+
 }
 
 /* ─── HERO ────────────────────────── */
@@ -2769,4 +2766,13 @@ a[title="LinkedIn"]:hover svg {
 
 a[title="WhatsApp"]:hover svg {
   color: #25D366 !important;
+}
+/* Final desktop cursor override. Keep this at the end so later component rules cannot show a second native cursor. */
+@media (hover: hover) and (pointer: fine) {
+  html.motion-cursor-enabled,
+  html.motion-cursor-enabled *,
+  html.motion-cursor-enabled *::before,
+  html.motion-cursor-enabled *::after {
+    cursor: none !important;
+  }
 }

@@ -15,7 +15,6 @@ export default function MotionCursor() {
     let lastY = 0;
     let angle = 0;
     let hasPoint = false;
-    let lastEventTime = 0;
     let removeMovementListeners = () => {};
 
     const moveCursor = (clientX: number, clientY: number) => {
@@ -42,10 +41,7 @@ export default function MotionCursor() {
       if ("pointerType" in pointerEvent && pointerEvent.pointerType === "touch") return;
 
       const mouseEvent = event as MouseEvent;
-      const timeStamp = Math.round(event.timeStamp);
-      if (timeStamp === lastEventTime && mouseEvent.clientX === lastX && mouseEvent.clientY === lastY) return;
-
-      lastEventTime = timeStamp;
+      if (hasPoint && mouseEvent.clientX === lastX && mouseEvent.clientY === lastY) return;
       moveCursor(mouseEvent.clientX, mouseEvent.clientY);
     };
 
