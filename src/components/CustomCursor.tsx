@@ -10,25 +10,39 @@ export default function CustomCursor() {
     const media = window.matchMedia(DESKTOP_POINTER_QUERY);
     let lastX = 0;
     let lastY = 0;
-    let hasLastPoint = false;
+    let x = 0;
+    let y = 0;
     let angle = 0;
+    let hasLastPoint = false;
+    let frame = 0;
 
-    const syncEnabled = () => setEnabled(media.matches);
-    const moveCursor = (x: number, y: number) => {
+    const render = () => {
+      frame = 0;
       if (!ref.current) return;
       ref.current.style.opacity = "1";
       ref.current.style.transform = `translate3d(${x}px, ${y}px, 0) rotate(${angle}deg)`;
     };
 
+    const scheduleRender = () => {
+      if (!frame) frame = requestAnimationFrame(render);
+    };
+
+    const syncEnabled = () => {
+      const shouldEnable = media.matches;
+      setEnabled(shouldEnable);
+      document.documentElement.classList.toggle("custom-cursor-enabled", shouldEnable);
+    };
+
     const onPointerMove = (event: PointerEvent) => {
       if (!media.matches || event.pointerType === "touch") return;
 
-      const x = event.clientX;
-      const y = event.clientY;
+      x = event.clientX;
+      y = event.clientY;
+
       if (hasLastPoint) {
         const dx = x - lastX;
         const dy = y - lastY;
-        if (Math.hypot(dx, dy) > 0.6) {
+        if (Math.hypot(dx, dy) > 0.3) {
           angle = Math.atan2(dy, dx) * (180 / Math.PI);
         }
       }
@@ -36,7 +50,7 @@ export default function CustomCursor() {
       lastX = x;
       lastY = y;
       hasLastPoint = true;
-      moveCursor(x, y);
+      scheduleRender();
     };
 
     const onPointerLeave = () => {
@@ -49,6 +63,8 @@ export default function CustomCursor() {
     document.addEventListener("mouseleave", onPointerLeave);
 
     return () => {
+      if (frame) cancelAnimationFrame(frame);
+      document.documentElement.classList.remove("custom-cursor-enabled");
       media.removeEventListener("change", syncEnabled);
       window.removeEventListener("pointermove", onPointerMove);
       document.removeEventListener("mouseleave", onPointerLeave);
@@ -61,17 +77,17 @@ export default function CustomCursor() {
     <svg
       ref={ref}
       className="custom-cursor"
-      width="22"
-      height="22"
-      viewBox="-22 -12 26 24"
+      width="20"
+      height="20"
+      viewBox="-20 -11 24 22"
       aria-hidden="true"
       focusable="false"
     >
       <path
-        d="M0 0 -18 -8 -13 0 -18 8Z"
-        fill="#000"
+        d="M0 0 -16 -7 -11.5 0 -16 7Z"
+        fill="#050505"
         stroke="#fff"
-        strokeWidth="2.2"
+        strokeWidth="2"
         strokeLinejoin="round"
       />
     </svg>
