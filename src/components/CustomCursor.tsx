@@ -1,80 +1,79 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+
+const DESKTOP_POINTER_QUERY = "(hover: hover) and (pointer: fine)";
 
 export default function CustomCursor() {
   const ref = useRef<SVGSVGElement>(null);
+  const [enabled, setEnabled] = useState(false);
 
   useEffect(() => {
-    let mx = window.innerWidth / 2;
-    let my = window.innerHeight / 2;
-    let cx = mx, cy = my;
-    let pcx = cx, pcy = cy;
-    let angle = -90; // starts pointing up
-    let raf: number;
+    const media = window.matchMedia(DESKTOP_POINTER_QUERY);
+    let lastX = 0;
+    let lastY = 0;
+    let hasLastPoint = false;
+    let angle = 0;
 
-    const onMove = (e: MouseEvent) => { mx = e.clientX; my = e.clientY; };
-    window.addEventListener("mousemove", onMove);
-
-    const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
-
-    const tick = () => {
-      pcx = cx; pcy = cy;
-      cx = lerp(cx, mx, 0.14);
-      cy = lerp(cy, my, 0.14);
-
-      const vx = cx - pcx;
-      const vy = cy - pcy;
-      const speed = Math.sqrt(vx * vx + vy * vy);
-
-      if (speed > 0.05) {
-        const target = Math.atan2(vy, vx) * (180 / Math.PI);
-        // Shortest-path angle lerp (handles 359→0 wrap)
-        let delta = target - angle;
-        while (delta > 180) delta -= 360;
-        while (delta < -180) delta += 360;
-        angle += delta * 0.14;
-      }
-
-      if (ref.current) {
-        ref.current.style.transform =
-          `translate(${cx}px,${cy}px) translate(-50%,-50%) rotate(${angle}deg)`;
-      }
-
-      raf = requestAnimationFrame(tick);
+    const syncEnabled = () => setEnabled(media.matches);
+    const moveCursor = (x: number, y: number) => {
+      if (!ref.current) return;
+      ref.current.style.opacity = "1";
+      ref.current.style.transform = `translate3d(${x}px, ${y}px, 0) rotate(${angle}deg)`;
     };
 
-    tick();
-    return () => { cancelAnimationFrame(raf); window.removeEventListener("mousemove", onMove); };
+    const onPointerMove = (event: PointerEvent) => {
+      if (!media.matches || event.pointerType === "touch") return;
+
+      const x = event.clientX;
+      const y = event.clientY;
+      if (hasLastPoint) {
+        const dx = x - lastX;
+        const dy = y - lastY;
+        if (Math.hypot(dx, dy) > 0.6) {
+          angle = Math.atan2(dy, dx) * (180 / Math.PI);
+        }
+      }
+
+      lastX = x;
+      lastY = y;
+      hasLastPoint = true;
+      moveCursor(x, y);
+    };
+
+    const onPointerLeave = () => {
+      if (ref.current) ref.current.style.opacity = "0";
+    };
+
+    syncEnabled();
+    media.addEventListener("change", syncEnabled);
+    window.addEventListener("pointermove", onPointerMove, { passive: true });
+    document.addEventListener("mouseleave", onPointerLeave);
+
+    return () => {
+      media.removeEventListener("change", syncEnabled);
+      window.removeEventListener("pointermove", onPointerMove);
+      document.removeEventListener("mouseleave", onPointerLeave);
+    };
   }, []);
+
+  if (!enabled) return null;
 
   return (
     <svg
       ref={ref}
-      width="28"
-      height="28"
-      viewBox="-14 -14 28 28"
-      fill="none"
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        pointerEvents: "none",
-        zIndex: 999999,
-        mixBlendMode: "difference",
-      }}
+      className="custom-cursor"
+      width="22"
+      height="22"
+      viewBox="-22 -12 26 24"
+      aria-hidden="true"
+      focusable="false"
     >
-      {/* Triangle pointing right → rotation handles direction */}
-      <polygon
-        points="13,0 -7,-9 -7,9"
-        stroke="white"
-        strokeWidth="1.6"
+      <path
+        d="M0 0 -18 -8 -13 0 -18 8Z"
+        fill="#000"
+        stroke="#fff"
+        strokeWidth="2.2"
         strokeLinejoin="round"
-        fill="none"
       />
-      <style>{`
-        @media (pointer: coarse) {
-          svg { display: none !important; }
-        }
-      `}</style>
     </svg>
   );
 }
